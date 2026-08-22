@@ -44,7 +44,17 @@ npm run dev
 
 Open `http://localhost:3000`. Case data is stored in a local JSON file at `.data/cases.json`, created on first run and excluded from version control since it can contain citizen personal information during local testing. The architecture this design intends for production is Firestore, org-scoped, with a Cloud Scheduler job running the daily sweep; the local file store implements the same function signatures so that swap touches one file, `src/lib/store.ts`.
 
-**Deployed on Vercel at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app).** A serverless function's own bundle directory is read-only at runtime, so on that host the store falls back to `/tmp`, which is writable but ephemeral: cases created during a demo can disappear on the next cold start. This is a disclosed limitation of the prototype's storage layer, not a hidden one, and it is exactly why Firestore, not a JSON file of any kind, is the intended production backend.
+**Deployed on Vercel at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app), backed by a real Firestore database.** `src/lib/store.ts` uses Firestore automatically once a service account is present in the environment (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`), which is how the live deployment runs; without those three set, it falls back to the local JSON file described above, which is how local development runs by default. A serverless function's own bundle directory is read-only at runtime, so the file store cannot be the production answer on Vercel regardless: only `/tmp` is writable there, and it is ephemeral and not shared across instances. That fallback still exists and is used automatically if Firestore is not configured, so the product runs with zero cloud setup, but it is not what the live URL runs on.
+
+### Cost safety on the live deployment
+
+The Firestore database backing the live URL was provisioned on Google Cloud's perpetual free tier for Firestore, not a trial credit: 50,000 reads, 20,000 writes and 20,000 deletes a day, 1 GiB of storage, every day, for as long as the project exists. Three layers sit on top of that ceiling rather than relying on it alone:
+
+1. **A GCP billing budget alert** on the project, firing at 1 cent, 50 cents and one dollar of spend, so a human is notified quickly if anything unexpected happens.
+2. **An in-process write rate limit** (`src/lib/firestore/rateLimit.ts`), thirty writes per minute per server instance, as a backstop against a bug or a scripted loop, not the primary control.
+3. **A minimally-scoped service account**, holding only `roles/datastore.user` on a dedicated GCP project, unable to touch billing or create other resources even if the key were compromised.
+
+None of this is a hard, provider-enforced $0 cap; Google Cloud does not offer one without disabling billing entirely, which would also take the database down. Ordinary hackathon-demo traffic does not come close to the free-tier ceiling, and the budget alert is the real backstop if something unexpected ever did.
 
 ### Optional: Gemini-backed features
 
