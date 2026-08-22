@@ -43,3 +43,5 @@ next-env.d.ts
 
 # case data (contains citizen PII in local dev; never commit)
 /.data/
+
+.vercel

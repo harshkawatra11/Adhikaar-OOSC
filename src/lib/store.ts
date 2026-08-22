@@ -8,13 +8,27 @@
 // the same CaseRecord shape to a JSON file on disk behind the same
 // function signatures a Firestore-backed store would expose, so swapping
 // the backing store later touches this one file, not the call sites.
+//
+// The deployment target matters here. A serverless function's own
+// bundle directory, what process.cwd() resolves to on Vercel, is
+// read-only at runtime; only /tmp is writable, and it is ephemeral,
+// wiped between cold starts and not shared across concurrent instances.
+// That is an intentional, disclosed limitation of this prototype's
+// storage layer, not a bug to hide: on a serverless host, data written
+// during a demo can disappear on the next cold start, which is exactly
+// why the production path is Firestore, not this file. Locally, where
+// the process persists between requests, .data/cases.json behaves like
+// a real database for as long as the dev server keeps running.
 
 import { promises as fs } from "fs";
+import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
 import type { CaseRecord } from "@/lib/types";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = process.env.VERCEL
+  ? path.join(os.tmpdir(), "adhikaar-data")
+  : path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "cases.json");
 
 async function ensureFile(): Promise<void> {

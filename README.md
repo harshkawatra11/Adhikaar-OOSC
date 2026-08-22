@@ -44,6 +44,8 @@ npm run dev
 
 Open `http://localhost:3000`. Case data is stored in a local JSON file at `.data/cases.json`, created on first run and excluded from version control since it can contain citizen personal information during local testing. The architecture this design intends for production is Firestore, org-scoped, with a Cloud Scheduler job running the daily sweep; the local file store implements the same function signatures so that swap touches one file, `src/lib/store.ts`.
 
+**Deployed on Vercel at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app).** A serverless function's own bundle directory is read-only at runtime, so on that host the store falls back to `/tmp`, which is writable but ephemeral: cases created during a demo can disappear on the next cold start. This is a disclosed limitation of the prototype's storage layer, not a hidden one, and it is exactly why Firestore, not a JSON file of any kind, is the intended production backend.
+
 ### Optional: Gemini-backed features
 
 Every decision the product makes, jurisdiction, legality, deadlines, fees, citations, is plain deterministic code and needs no API key at all. Two additive features use Gemini for the two things a model is allowed to do here, propose a rewrite and phrase a translation, both described on the Methodology page:
