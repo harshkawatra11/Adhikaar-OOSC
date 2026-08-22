@@ -84,8 +84,9 @@ export default function MethodologyPage() {
                 ["Application fee for a given state", "Decides, a cited lookup table", "Never"],
                 ["Whether a legal claim may render on screen", "Decides, the citation render gate", "Never"],
                 ["Which authority within a jurisdiction to suggest", "Retrieval and filtering choose the candidates", "May re-rank, and must cite the candidate it picks"],
-                ["Rephrasing an opinion-seeking question as a records request", "Not applicable", "Proposes a rewrite; an operator accepts or rejects it"],
-                ["Translation and tone", "Not applicable", "Proposes; not authoritative"],
+                ["Whether a question needs rewriting at all, and the safe mechanical rewrite itself", "Decides, the eighteen-rule linter, before any model is called", "Not consulted"],
+                ["A more natural-sounding phrasing of that same rewrite", "Sets the boundary the rewrite must stay inside", "Optional, via Gemini; shown beside the mechanical version, never in place of it, and only applied if an operator clicks accept"],
+                ["Plain-language translation for the citizen", "Supplies the questions and grievance verbatim; the model may not add, drop, or reinterpret any of them", "Optional, via Gemini; always shown beside the formal English filing with a machine-translation notice"],
               ].map((row) => (
                 <tr key={row[0]}>
                   <td className="p-3" style={{ color: "var(--ink)" }}>
@@ -103,7 +104,11 @@ export default function MethodologyPage() {
           </table>
         </div>
         <p className="text-sm mt-4" style={{ color: "var(--ink-faint)" }}>
-          The rule stated plainly: a model may propose and phrase. It may never adjudicate or compute.
+          The rule stated plainly: a model may propose and phrase. It may never adjudicate or compute. Both
+          Gemini-backed features are optional and additive. Adhikaar was built and fully tested, all ninety-four
+          automated tests and the evaluation harness, before either was wired in, and both keep working exactly as
+          before if no key is configured: the buttons simply report that translation is unavailable rather than
+          failing silently or blocking anything else on the page.
         </p>
       </section>
 

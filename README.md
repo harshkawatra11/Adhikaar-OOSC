@@ -33,7 +33,7 @@ This system does not ask a model to decide anything a citizen's fee or filing de
 | Whether a legal claim may render on screen | Deterministic code, a citation render gate that throws on an unresolved citation |
 | Rephrasing a question, translation, tone | Proposed by a rule-based rewrite; a human accepts or rejects it |
 
-No Gemini or other model API key is required to run this prototype end to end. Every decision above is plain TypeScript, which is also why it is fully testable offline.
+No Gemini or other model API key is required to run this prototype end to end, or to file a single case. Every decision above is plain TypeScript, which is also why it is fully testable offline, and why the 94-test suite and the evaluation harness both run with no key configured. A key only turns on two additive, clearly-labelled phrasing features described below.
 
 ## Running it
 
@@ -43,6 +43,21 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. Case data is stored in a local JSON file at `.data/cases.json`, created on first run and excluded from version control since it can contain citizen personal information during local testing. The architecture this design intends for production is Firestore, org-scoped, with a Cloud Scheduler job running the daily sweep; the local file store implements the same function signatures so that swap touches one file, `src/lib/store.ts`.
+
+### Optional: Gemini-backed features
+
+Every decision the product makes, jurisdiction, legality, deadlines, fees, citations, is plain deterministic code and needs no API key at all. Two additive features use Gemini for the two things a model is allowed to do here, propose a rewrite and phrase a translation, both described on the Methodology page:
+
+- A plain-language, translated copy of the filed questions for the citizen, always shown beside the formal English original.
+- An optional, more natural-sounding alternative to the linter's own mechanical rewrite of a non-compliant question, offered beside the mechanical one, never in place of it.
+
+To turn these on:
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey), wired to a Gemini-enabled Google Cloud project. `GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`. Without a key, both features show a clear inline message rather than failing silently or affecting anything else on the page, which is exactly what the automated test suite and the browser walkthrough below were run against before any key existed.
 
 ```bash
 npm run test    # 94 tests: every linter rule fixtured pass and fail, deadline arithmetic, the citation gate, jurisdiction and remedy triage, the sweep pipeline, PDF generation

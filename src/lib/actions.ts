@@ -8,6 +8,8 @@ import { runRemedyTriage } from "@/lib/remedy";
 import { lintQuestion } from "@/lib/linter/rules";
 import { computeInitialDeadlines } from "@/lib/deadlines";
 import { sweepCase } from "@/lib/sweep";
+import { generatePlainLanguageCopy } from "@/lib/gemini/translate";
+import { polishRewrite } from "@/lib/gemini/rewritePolish";
 import type { CaseRecord, DraftQuestion } from "@/lib/types";
 import { randomUUID } from "crypto";
 
@@ -81,13 +83,18 @@ export async function removeQuestionAction(caseId: string, questionId: string): 
   revalidatePath(`/docket/${caseId}`);
 }
 
-export async function acceptRewriteAction(caseId: string, questionId: string): Promise<void> {
+export async function acceptRewriteAction(
+  caseId: string,
+  questionId: string,
+  variant: "mechanical" | "ai" = "mechanical"
+): Promise<void> {
   const current = await getCase(caseId);
   if (!current) return;
 
   const questions = current.questions.map((q) => {
     if (q.id !== questionId) return q;
-    const rewrite = q.findings.find((f) => f.suggestedRewrite)?.suggestedRewrite;
+    const finding = q.findings.find((f) => f.suggestedRewrite);
+    const rewrite = variant === "ai" ? finding?.aiPhrasedRewrite : finding?.suggestedRewrite;
     if (!rewrite) return q;
     const newFindings = lintQuestion(rewrite);
     return { ...q, originalText: q.originalText ?? q.text, text: rewrite, findings: newFindings };
@@ -95,6 +102,55 @@ export async function acceptRewriteAction(caseId: string, questionId: string): P
 
   await updateCase(caseId, { questions });
   revalidatePath(`/docket/${caseId}`);
+}
+
+export async function polishRewriteAction(
+  caseId: string,
+  questionId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const current = await getCase(caseId);
+  if (!current) return { ok: false, error: "Case not found." };
+
+  const question = current.questions.find((q) => q.id === questionId);
+  const finding = question?.findings.find((f) => f.suggestedRewrite);
+  if (!question || !finding?.suggestedRewrite) {
+    return { ok: false, error: "No mechanical rewrite to polish." };
+  }
+
+  try {
+    const polished = await polishRewrite(question.originalText ?? question.text, finding.suggestedRewrite);
+    const questions = current.questions.map((q) =>
+      q.id !== questionId
+        ? q
+        : {
+            ...q,
+            findings: q.findings.map((f) =>
+              f.ruleId === finding.ruleId ? { ...f, aiPhrasedRewrite: polished } : f
+            ),
+          }
+    );
+    await updateCase(caseId, { questions });
+    revalidatePath(`/docket/${caseId}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error." };
+  }
+}
+
+export async function generatePlainLanguageCopyAction(
+  caseId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const current = await getCase(caseId);
+  if (!current) return { ok: false, error: "Case not found." };
+
+  try {
+    const result = await generatePlainLanguageCopy(current);
+    await updateCase(caseId, { plainLanguageCopy: result });
+    revalidatePath(`/docket/${caseId}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error." };
+  }
 }
 
 export async function markFiledAction(caseId: string, formData: FormData): Promise<void> {

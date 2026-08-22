@@ -3,6 +3,8 @@ import { getCase } from "@/lib/store";
 import { StatusChip } from "@/components/StatusChip";
 import { CitationTag } from "@/components/CitationTag";
 import { QuestionComposer } from "@/components/QuestionComposer";
+import { PolishRewriteButton } from "@/components/PolishRewriteButton";
+import { PlainLanguageCopy } from "@/components/PlainLanguageCopy";
 import {
   selectAuthorityAction,
   removeQuestionAction,
@@ -203,6 +205,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                           </button>
                         </form>
                       )}
+                      {f.suggestedRewrite && (
+                        <PolishRewriteButton caseId={caseRecord.id} questionId={q.id} finding={f} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -211,6 +216,16 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           ))}
         </div>
         <QuestionComposer caseId={caseRecord.id} />
+      </Section>
+
+      {/* Plain-language copy for the citizen */}
+      <Section title="Plain-language copy for the citizen">
+        <PlainLanguageCopy
+          caseId={caseRecord.id}
+          language={caseRecord.applicant.preferredLanguage}
+          existing={caseRecord.plainLanguageCopy}
+          hasQuestions={caseRecord.questions.length > 0}
+        />
       </Section>
 
       {/* Fee */}
