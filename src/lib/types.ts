@@ -1,0 +1,144 @@
+// Core domain types for Adhikaar.
+// A case moves through: intake -> triage -> drafting -> filed -> tracked -> (appeal).
+
+export type RemedyClass =
+  | "rti"
+  | "consumer"
+  | "labour"
+  | "tenancy"
+  | "grievance"
+  | "hybrid";
+
+export type JurisdictionLevel = "union" | "state" | "concurrent" | "unknown";
+
+export type CaseStatus =
+  | "intake"
+  | "triaged"
+  | "drafted"
+  | "filed"
+  | "awaiting_response"
+  | "deemed_refusal"
+  | "first_appeal_drafted"
+  | "first_appeal_filed"
+  | "second_appeal_drafted"
+  | "second_appeal_filed"
+  | "resolved"
+  | "out_of_coverage";
+
+export interface Applicant {
+  name: string;
+  address: string;
+  isBpl: boolean;
+  preferredLanguage: string;
+}
+
+export interface AuthorityCandidate {
+  authorityId: string;
+  authorityName: string;
+  department: string;
+  jurisdiction: JurisdictionLevel;
+  state?: string;
+  cpioAddress: string;
+  faaAddress: string;
+  confidence: number; // 0-1
+  reasoning: string;
+  sourceCitationId: string;
+}
+
+export interface JurisdictionTriageResult {
+  level: JurisdictionLevel;
+  subjectMatter: string;
+  scheduleEntry: string;
+  scheduleList: "Union" | "State" | "Concurrent" | "Unclassified";
+  candidates: AuthorityCandidate[];
+  blockingWarning?: {
+    message: string;
+    citationId: string;
+  };
+  computedAt: string;
+}
+
+export interface RemedyTriageResult {
+  remedyClass: RemedyClass;
+  forumName: string;
+  limitationPeriod: string;
+  pecuniaryJurisdiction?: {
+    level: "District" | "State" | "National";
+    reasoning: string;
+  };
+  outOfCoverage: boolean;
+  guidanceNote: string;
+  citationIds: string[];
+}
+
+export type LintSeverity = "block" | "warn" | "info";
+
+export interface LintFinding {
+  ruleId: string;
+  severity: LintSeverity;
+  title: string;
+  explanation: string;
+  citationId: string;
+  suggestedRewrite?: string;
+  rewriteAccepted?: boolean;
+}
+
+export interface DraftQuestion {
+  id: string;
+  text: string;
+  originalText?: string;
+  findings: LintFinding[];
+}
+
+export interface Deadline {
+  id: string;
+  label: string;
+  basis: string; // e.g. "Section 7(1)"
+  citationId: string;
+  dueDate: string; // ISO date
+  status: "pending" | "met" | "missed";
+}
+
+export interface FeeInfo {
+  amount: number;
+  currency: "INR";
+  waived: boolean;
+  waiverReason?: string;
+  paymentModes: string[];
+  verifiedAgainst: string;
+  confidence: "verified" | "conflicting_sources" | "unverified";
+}
+
+export interface CaseRecord {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  status: CaseStatus;
+
+  applicant: Applicant;
+  grievanceSummary: string;
+  grievanceRaw: string;
+  lowConfidenceFields: string[];
+
+  jurisdiction?: JurisdictionTriageResult;
+  remedy?: RemedyTriageResult;
+  selectedAuthorityId?: string;
+
+  questions: DraftQuestion[];
+  fee?: FeeInfo;
+
+  filedDate?: string;
+  deadlines: Deadline[];
+
+  operatorNotes: string;
+}
+
+export interface CorpusChunk {
+  id: string;
+  act: string;
+  section: string;
+  heading: string;
+  text: string;
+  note?: string;
+  sourceUrl: string;
+}

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# case data (contains citizen PII in local dev; never commit)
+/.data/

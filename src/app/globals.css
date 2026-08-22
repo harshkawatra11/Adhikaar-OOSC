@@ -1,26 +1,127 @@
 @import "tailwindcss";
 
+/*
+  Adhikaar design system.
+  The palette is drawn from bound statute books, ledgers and wax seals,
+  not from software. Warm paper, iron-gall ink, oxblood and aged brass.
+  No rounded corners anywhere except the seal mark itself, which is a
+  seal and is meant to be round.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f2ead9;
+  --paper-raised: #e9dfc4;
+  --paper-deep: #ddd0ab;
+  --ink: #241a10;
+  --ink-soft: #4d3d29;
+  --ink-faint: #7a6a51;
+  --rule: #c9b98d;
+  --rule-strong: #241a10;
+  --seal: #7c2415;
+  --seal-deep: #551708;
+  --seal-tint: #eddad3;
+  --gilt: #93691f;
+  --gilt-bright: #b6862c;
+  --gilt-tint: #eee2c3;
+  --forest: #3d5940;
+  --forest-tint: #dde6dc;
+  --brick: #a3491f;
+  --brick-tint: #f1ddca;
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-source-serif);
+  --font-mono: var(--font-plex-mono);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-seal: var(--seal);
+  --color-seal-deep: var(--seal-deep);
+  --color-seal-tint: var(--seal-tint);
+  --color-gilt: var(--gilt);
+  --color-gilt-bright: var(--gilt-bright);
+  --color-gilt-tint: var(--gilt-tint);
+  --color-forest: var(--forest);
+  --color-forest-tint: var(--forest-tint);
+  --color-brick: var(--brick);
+  --color-brick-tint: var(--brick-tint);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-radius: 0 !important;
+}
+
+html {
+  background: var(--paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), "Iowan Old Style", Georgia, serif;
+  background-image:
+    linear-gradient(var(--paper) 0%, var(--paper) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(36, 26, 16, 0.018) 0px,
+      rgba(36, 26, 16, 0.018) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+}
+
+::selection {
+  background: var(--gilt-tint);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.hairline {
+  border-color: var(--rule-strong);
+}
+
+/* Ledger table striping */
+.ledger tbody tr:nth-child(odd) {
+  background: var(--paper-raised);
+}
+
+/* Statute citation mark, styled like a footnote reference in a bound act */
+.cite {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  border-bottom: 1px dotted var(--gilt);
+  color: var(--seal-deep);
+  cursor: help;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+}
+
+.seal-mark {
+  border-radius: 999px !important;
+}
+
+@media print {
+  body {
+    background: white;
+  }
 }
