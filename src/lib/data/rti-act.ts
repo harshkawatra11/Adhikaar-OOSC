@@ -27,7 +27,7 @@ export const RTI_ACT_CORPUS: CorpusChunk[] = [
     id: "rti-6-1",
     act: "Right to Information Act, 2005",
     section: "6(1)",
-    heading: "Request for obtaining information — form and language",
+    heading: "Request for obtaining information: form and language",
     text: `A person, who desires to obtain any information under this Act, shall make a request in writing or through electronic means in English or Hindi or in the official language of the area in which the application is being made, accompanying such fee as may be prescribed, to the Central Public Information Officer or State Public Information Officer, as the case may be, of the concerned public authority, specifying the particulars of the information sought by him or her.`,
     sourceUrl: CIC_SOURCE,
   },

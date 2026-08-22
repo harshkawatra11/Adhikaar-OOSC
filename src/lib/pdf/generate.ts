@@ -6,7 +6,7 @@
 // flourishes, no colour, because a government office does not want them
 // and neither does a serious document.
 
-import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import type { CaseRecord } from "@/lib/types";
 import { AUTHORITIES } from "@/lib/data/authorities";
 
@@ -133,6 +133,6 @@ export async function generateRtiPdf(caseRecord: CaseRecord): Promise<Uint8Array
 
 function feeLine(caseRecord: CaseRecord): string {
   if (!caseRecord.fee) return "Not yet computed";
-  if (caseRecord.fee.waived) return `Waived — ${caseRecord.fee.waiverReason ?? "fee exemption applies"}`;
+  if (caseRecord.fee.waived) return `Waived (${caseRecord.fee.waiverReason ?? "fee exemption applies"})`;
   return `Rs. ${caseRecord.fee.amount} (${caseRecord.fee.paymentModes.join(", ")})`;
 }

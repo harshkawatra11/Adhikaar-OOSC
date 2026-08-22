@@ -16,7 +16,12 @@ export interface ScheduleMapping {
 
 export const SEVENTH_SCHEDULE_MAP: ScheduleMapping[] = [
   {
-    keywords: ["land record", "khasra", "khatauni", "7/12", "patta", "mutation", "revenue record", "survey number", "fmb", "plot", "khata"],
+    keywords: [
+      "land record", "khasra", "khatauni", "7/12", "patta", "mutation", "revenue record",
+      "survey number", "fmb", "plot", "khata", "property", "land bearing", "ownership of land",
+      "registered owner", "land dispute", "encroachment", "land allotted", "chain of ownership",
+      "gairmajarua", "tehsildar", "collector rate", "registry for",
+    ],
     subjectMatter: "Land and land revenue",
     list: "State",
     entry: "List II, Entry 18 (Land)",
