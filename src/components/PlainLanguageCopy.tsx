@@ -22,7 +22,7 @@ export function PlainLanguageCopy({
     <div className="border p-5" style={{ borderColor: "var(--rule-strong)" }}>
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <p style={{ color: "var(--ink-soft)" }}>
-          A translated, plain-language copy of this application in {language || "the applicant's language"}, for the
+          A translated, plain-language copy of this application in {language || "the applicant’s language"}, for the
           citizen. Machine-generated, always shown beside the formal filing, and reviewed before it is handed over.
         </p>
         <button

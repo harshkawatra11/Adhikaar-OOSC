@@ -4,6 +4,7 @@ import { useState } from "react";
 import { lintQuestion } from "@/lib/linter/rules";
 import { addQuestionAction } from "@/lib/actions";
 import { CitationTag } from "@/components/CitationTag";
+import { VoiceDictationButton } from "@/components/VoiceDictationButton";
 import type { LintFinding } from "@/lib/types";
 
 const SEVERITY_COLOR: Record<LintFinding["severity"], string> = {
@@ -20,9 +21,12 @@ export function QuestionComposer({ caseId }: { caseId: string }) {
 
   return (
     <div className="border p-5" style={{ borderColor: "var(--rule-strong)" }}>
-      <p className="font-medium mb-2" style={{ color: "var(--ink)" }}>
-        Draft the next question
-      </p>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <p className="font-medium" style={{ color: "var(--ink)" }}>
+          Draft the next question
+        </p>
+        <VoiceDictationButton onTranscript={(text) => setDraft((prev) => (prev ? prev + " " + text : text))} />
+      </div>
       <textarea
         id="question-draft"
         value={draft}

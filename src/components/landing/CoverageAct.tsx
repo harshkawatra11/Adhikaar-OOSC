@@ -5,7 +5,7 @@ import { DIRECTORY_COVERAGE_STATEMENT } from "@/lib/data/authorities";
 export function CoverageAct() {
   return (
     <section className="border-b" style={{ borderColor: "var(--rule)" }}>
-      <div className="mx-auto max-w-6xl px-6 py-16 grid gap-8 md:grid-cols-2">
+      <div className="mx-auto max-w-6xl px-6 py-12 grid gap-8 md:grid-cols-2">
         <Reveal>
           <h2 className="font-display font-semibold text-xl mb-3" style={{ color: "var(--ink)" }}>
             Who this is for

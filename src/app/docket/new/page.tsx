@@ -1,4 +1,5 @@
 import { intakeAction } from "@/lib/actions";
+import { GrievanceField } from "@/components/GrievanceField";
 
 export const metadata = { title: "New Case | Adhikaar" };
 
@@ -18,16 +19,7 @@ export default function NewCasePage() {
       </p>
 
       <form action={intakeAction} className="space-y-8">
-        <Field label="Grievance, in the citizen's own words" required>
-          <textarea
-            name="grievance"
-            required
-            rows={6}
-            placeholder="For example: I want a copy of the 7/12 extract and mutation register for my father's land in Nagpur taluka, khasra number 134/1, 2, 3."
-            className="w-full border p-3 font-body text-base"
-            style={{ borderColor: "var(--rule-strong)", background: "var(--paper)", color: "var(--ink)" }}
-          />
-        </Field>
+        <GrievanceField />
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field label="Applicant name">

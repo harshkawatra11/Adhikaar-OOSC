@@ -9,12 +9,12 @@ const STEPS = [
   {
     n: "2",
     title: "Which government, and which office?",
-    body: "Jurisdiction triage classifies the subject matter against the Constitution's Seventh Schedule, Union, State or Concurrent, before an authority is ever suggested. If the case is a State subject and a Central authority is selected, it blocks the choice and explains why, citing the exact rule.",
+    body: "Jurisdiction triage classifies the subject matter against the Constitution’s Seventh Schedule, Union, State or Concurrent, before an authority is ever suggested. If the case is a State subject and a Central authority is selected, it blocks the choice and explains why, citing the exact rule.",
   },
   {
     n: "3",
     title: "Will this question survive a refusal?",
-    body: "Every drafted question is checked against a rule engine built from the Act's own exemptions and definitions, eighteen rules in total, each one citing its section. An opinion-seeking question is rewritten as a records request before it is ever posted.",
+    body: "Every drafted question is checked against a rule engine built from the Act’s own exemptions and definitions, eighteen rules in total, each one citing its section. An opinion-seeking question is rewritten as a records request before it is ever posted.",
   },
   {
     n: "4",
@@ -25,51 +25,33 @@ const STEPS = [
 
 export function ProcessAct() {
   return (
-    <section className="paper-grain relative border-b" style={{ borderColor: "var(--rule)" }}>
-      <div className="mx-auto max-w-6xl px-6 py-20">
+    <section className="border-b" style={{ borderColor: "var(--rule)" }}>
+      <div className="mx-auto max-w-6xl px-6 py-14">
         <Reveal>
-          <h2 className="font-display font-semibold mb-2" style={{ color: "var(--ink)", fontSize: "var(--step-3)" }}>
+          <h2 className="font-display font-semibold text-2xl mb-2" style={{ color: "var(--ink)" }}>
             What happens before a document is written
           </h2>
         </Reveal>
         <Reveal delay={0.05}>
-          <p className="mb-14 max-w-2xl" style={{ color: "var(--ink-soft)", fontSize: "var(--step-0)" }}>
+          <p className="mb-8 max-w-2xl" style={{ color: "var(--ink-soft)" }}>
             Four checks run in sequence, each one deterministic and citable. None of them
             depend on a language model reaching a verdict, because a verdict about what the law
             permits is not something a model is entitled to make on its own.
           </p>
         </Reveal>
-
-        <ol className="relative">
-          <div
-            className="hidden md:block absolute top-0 bottom-0"
-            style={{ left: 27, width: 2, background: "var(--rule)" }}
-            aria-hidden
-          />
+        <ol className="grid gap-6 md:grid-cols-2">
           {STEPS.map((step, i) => (
-            <Reveal key={step.n} delay={i * 0.06}>
-              <li className="relative flex gap-6 pb-12 last:pb-0 list-none">
-                <div
-                  className="relative z-10 shrink-0 border-2 flex items-center justify-center font-display font-bold"
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderColor: "var(--ink)",
-                    background: "var(--paper)",
-                    color: "var(--seal)",
-                    fontSize: "1.4rem",
-                  }}
-                >
-                  {step.n}
-                </div>
-                <div className="pt-2">
-                  <h3 className="font-display font-semibold text-xl mb-2" style={{ color: "var(--ink)" }}>
-                    {step.title}
-                  </h3>
-                  <p className="leading-relaxed max-w-xl" style={{ color: "var(--ink-soft)" }}>
-                    {step.body}
-                  </p>
-                </div>
+            <Reveal key={step.n} delay={i * 0.05}>
+              <li className="border p-6 list-none h-full" style={{ borderColor: "var(--rule-strong)" }}>
+                <span className="font-mono text-xs" style={{ color: "var(--gilt)" }}>
+                  {step.n.padStart(2, "0")}
+                </span>
+                <h3 className="font-display font-semibold text-lg mt-1 mb-2" style={{ color: "var(--ink)" }}>
+                  {step.title}
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
+                  {step.body}
+                </p>
               </li>
             </Reveal>
           ))}
