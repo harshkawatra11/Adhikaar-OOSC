@@ -272,6 +272,17 @@ Set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` fr
 
 ---
 
+## &#9989; CI/CD
+
+Two independent mechanisms, neither depending on the other:
+
+- **Quality gate**: [`.github/workflows/ci.yml`](.github/workflows/ci.yml), GitHub Actions, runs on every push and every pull request into `master`. Lint, then the full Vitest suite, then a real `next build`, in that cheapest-first order, so a broken commit fails in seconds rather than minutes wherever possible. `master` has required-status-check branch protection: a pull request cannot merge while this check is red. Reproduce the exact gate locally with `npm run verify`.
+- **Deploy**: Vercel's own Git integration, connected directly to this repository, builds and promotes to production independently on every push to `master`. There is deliberately no deploy step inside the GitHub Actions workflow; Vercel's managed build pipeline is the more reliable mechanism for that half of the job, and duplicating it would only add a second thing that could fail.
+
+Both halves were verified against a real failure, not assumed. The first version of the CI workflow included a standalone `tsc --noEmit` step that passed on every local run but failed on the very first real run against a clean GitHub Actions checkout, because Next.js generates ambient route types (like `LayoutProps`) as a side effect of `next build`/`next dev`, and a fresh checkout has no such artifact yet; `next build` performs the same check afterward with the generated types actually present, so the redundant, environment-dependent step was removed rather than worked around. Separately, a throwaway branch with a deliberately failing test assertion was pushed and confirmed to fail the pipeline for real (the Build step correctly never ran once Test failed), then deleted.
+
+---
+
 ## &#129504; What this system decides, what it merely proposes
 
 | Concern | Deterministic code | Language model |
