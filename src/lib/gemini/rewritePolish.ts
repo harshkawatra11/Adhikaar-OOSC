@@ -7,7 +7,7 @@
 // choice next to the deterministic one, never as a replacement an
 // operator has not seen and chosen.
 
-import { getGeminiClient, getGeminiModelId, isGeminiConfigured } from "@/lib/gemini/client";
+import { generateWithFallback, isGeminiConfigured } from "@/lib/gemini/client";
 
 const SYSTEM_INSTRUCTION = `You rephrase a single Right to Information application question so it reads naturally, without changing what is being asked for.
 
@@ -22,27 +22,17 @@ export async function polishRewrite(originalQuestion: string, mechanicalRewrite:
     throw new Error("GEMINI_API_KEY is not set.");
   }
 
-  const ai = getGeminiClient();
-  const model = getGeminiModelId();
-
   const prompt = `Original, non-compliant question: ${originalQuestion}
 
 Mechanical rewrite produced by the rule engine (this is the meaning and scope you must preserve exactly): ${mechanicalRewrite}
 
 Produce a more naturally phrased version of the mechanical rewrite now.`;
 
-  const response = await ai.models.generateContent({
-    model,
+  const { text } = await generateWithFallback({
     contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.3,
-    },
+    systemInstruction: SYSTEM_INSTRUCTION,
+    temperature: 0.3,
   });
 
-  const text = response.text?.trim();
-  if (!text) {
-    throw new Error("Gemini returned an empty response.");
-  }
   return text;
 }

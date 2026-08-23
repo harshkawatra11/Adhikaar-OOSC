@@ -7,7 +7,7 @@
 // note that it is machine-translated and should be checked before it is
 // handed to the citizen, never treated as the filing itself.
 
-import { getGeminiClient, getGeminiModelId, isGeminiConfigured } from "@/lib/gemini/client";
+import { generateWithFallback, isGeminiConfigured } from "@/lib/gemini/client";
 import type { CaseRecord } from "@/lib/types";
 
 export interface PlainLanguageResult {
@@ -33,9 +33,6 @@ export async function generatePlainLanguageCopy(
     throw new Error("GEMINI_API_KEY is not set.");
   }
 
-  const ai = getGeminiClient();
-  const model = getGeminiModelId();
-
   const questionsBlock = caseRecord.questions
     .map((q, i) => `${i + 1}. ${q.text}`)
     .join("\n");
@@ -49,24 +46,16 @@ Target language for the plain-language copy: ${caseRecord.applicant.preferredLan
 
 Write the plain-language copy now, in the target language.`;
 
-  const response = await ai.models.generateContent({
-    model,
+  const { text, modelUsed } = await generateWithFallback({
     contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.2,
-    },
+    systemInstruction: SYSTEM_INSTRUCTION,
+    temperature: 0.2,
   });
-
-  const text = response.text?.trim();
-  if (!text) {
-    throw new Error("Gemini returned an empty response.");
-  }
 
   return {
     language: caseRecord.applicant.preferredLanguage || "English",
     text,
-    model,
+    model: modelUsed,
     generatedAt: new Date().toISOString(),
   };
 }

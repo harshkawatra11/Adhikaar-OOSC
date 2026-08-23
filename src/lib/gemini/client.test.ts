@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // isGeminiConfigured and getGeminiClient must fail predictably, not
 // crash the caller, when no key is set. Both callers in actions.ts rely
@@ -51,17 +51,142 @@ describe("Gemini client, without a configured key", () => {
   });
 });
 
-describe("model id resolution", () => {
-  it("defaults to gemini-2.5-flash when GEMINI_MODEL is unset", async () => {
+describe("getGeminiModelChain", () => {
+  afterEach(() => {
     delete process.env.GEMINI_MODEL;
-    const { getGeminiModelId } = await import("@/lib/gemini/client");
-    expect(getGeminiModelId()).toBe("gemini-2.5-flash");
   });
 
-  it("honours an explicit GEMINI_MODEL override", async () => {
-    process.env.GEMINI_MODEL = "gemini-3.7-flash";
-    const { getGeminiModelId } = await import("@/lib/gemini/client");
-    expect(getGeminiModelId()).toBe("gemini-3.7-flash");
+  it("defaults to gemini-3.7-flash first, gemini-2.5-flash as the fallback", async () => {
     delete process.env.GEMINI_MODEL;
+    const { getGeminiModelChain } = await import("@/lib/gemini/client");
+    expect(getGeminiModelChain()).toEqual(["gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"]);
+  });
+
+  it("tries an explicit GEMINI_MODEL override first, ahead of the built-in chain", async () => {
+    process.env.GEMINI_MODEL = "gemini-experimental-preview";
+    const { getGeminiModelChain } = await import("@/lib/gemini/client");
+    expect(getGeminiModelChain()).toEqual([
+      "gemini-experimental-preview",
+      "gemini-3.7-flash",
+      "gemini-3.6-flash",
+      "gemini-2.5-flash",
+    ]);
+  });
+
+  it("does not duplicate an override that already matches a built-in model", async () => {
+    process.env.GEMINI_MODEL = "gemini-3.7-flash";
+    const { getGeminiModelChain } = await import("@/lib/gemini/client");
+    expect(getGeminiModelChain()).toEqual(["gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"]);
+  });
+});
+
+const { mockGenerateContent } = vi.hoisted(() => ({ mockGenerateContent: vi.fn() }));
+
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: class {
+    models = { generateContent: mockGenerateContent };
+  },
+}));
+
+describe("generateWithFallback", () => {
+  const originalKey = process.env.GEMINI_API_KEY;
+
+  beforeEach(() => {
+    vi.resetModules();
+    mockGenerateContent.mockReset();
+    process.env.GEMINI_API_KEY = "test-key";
+  });
+
+  afterEach(() => {
+    if (originalKey) {
+      process.env.GEMINI_API_KEY = originalKey;
+    } else {
+      delete process.env.GEMINI_API_KEY;
+    }
+  });
+
+  it("uses the first model in the chain when it succeeds", async () => {
+    mockGenerateContent.mockResolvedValue({ text: "  translated text  " });
+
+    const { generateWithFallback } = await import("@/lib/gemini/client");
+    const result = await generateWithFallback({
+      contents: "hello",
+      systemInstruction: "translate",
+      temperature: 0.2,
+    });
+
+    expect(result.modelUsed).toBe("gemini-3.7-flash");
+    expect(result.text).toBe("translated text");
+  });
+
+  it("falls back to gemini-3.6-flash when gemini-3.7-flash fails", async () => {
+    mockGenerateContent.mockImplementation(({ model }: { model: string }) => {
+      if (model === "gemini-3.7-flash") {
+        return Promise.reject(new Error("model not found for this API key"));
+      }
+      return Promise.resolve({ text: "fallback response" });
+    });
+
+    const { generateWithFallback } = await import("@/lib/gemini/client");
+    const result = await generateWithFallback({
+      contents: "hello",
+      systemInstruction: "translate",
+      temperature: 0.2,
+    });
+
+    expect(result.modelUsed).toBe("gemini-3.6-flash");
+    expect(result.text).toBe("fallback response");
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back all the way to gemini-2.5-flash when both newer models fail", async () => {
+    mockGenerateContent.mockImplementation(({ model }: { model: string }) => {
+      if (model === "gemini-3.7-flash" || model === "gemini-3.6-flash") {
+        return Promise.reject(new Error("model not found for this API key"));
+      }
+      return Promise.resolve({ text: "oldest fallback response" });
+    });
+
+    const { generateWithFallback } = await import("@/lib/gemini/client");
+    const result = await generateWithFallback({
+      contents: "hello",
+      systemInstruction: "translate",
+      temperature: 0.2,
+    });
+
+    expect(result.modelUsed).toBe("gemini-2.5-flash");
+    expect(result.text).toBe("oldest fallback response");
+    expect(mockGenerateContent).toHaveBeenCalledTimes(3);
+  });
+
+  it("throws GeminiAllModelsFailedError naming every model tried, when all fail", async () => {
+    mockGenerateContent.mockRejectedValue(new Error("quota exceeded"));
+
+    const { generateWithFallback, GeminiAllModelsFailedError } = await import("@/lib/gemini/client");
+    await expect(
+      generateWithFallback({ contents: "hello", systemInstruction: "translate", temperature: 0.2 })
+    ).rejects.toThrow(GeminiAllModelsFailedError);
+    await expect(
+      generateWithFallback({ contents: "hello", systemInstruction: "translate", temperature: 0.2 })
+    ).rejects.toThrow(/gemini-3\.7-flash.*gemini-3\.6-flash.*gemini-2\.5-flash/);
+  });
+
+  it("treats an empty response from a model as a failure and moves to the next one", async () => {
+    mockGenerateContent.mockImplementation(({ model }: { model: string }) => {
+      if (model === "gemini-3.7-flash") {
+        return Promise.resolve({ text: "   " });
+      }
+      return Promise.resolve({ text: "real answer" });
+    });
+
+    const { generateWithFallback } = await import("@/lib/gemini/client");
+    const result = await generateWithFallback({
+      contents: "hello",
+      systemInstruction: "translate",
+      temperature: 0.2,
+    });
+
+    expect(result.modelUsed).toBe("gemini-3.6-flash");
+    expect(result.text).toBe("real answer");
   });
 });
