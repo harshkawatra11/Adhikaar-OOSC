@@ -1,92 +1,308 @@
+<div align="center">
+
 # Adhikaar
 
-A jurisdiction-aware caseload workbench for Right to Information applications, built for the person who files them on behalf of others rather than for a single citizen filing once: a Common Service Centre operator, a legal aid volunteer, an RTI activist.
+*A jurisdiction-aware RTI casework workbench, built for the people who file on behalf of others.*
 
-Built for the OOSC 4.0 Hackathon, Problem Statement 3, AI for Civic and Legal Empowerment.
+[![Live App](https://img.shields.io/badge/Live_App-adhikaaroosc.vercel.app-7c2415?style=for-the-badge&logo=vercel&logoColor=white)](https://adhikaaroosc.vercel.app)
+[![Tests](https://img.shields.io/badge/tests-109_passing-3d5940?style=for-the-badge&logo=vitest&logoColor=white)](#-testing-and-evaluation)
+[![License](https://img.shields.io/badge/license-Apache_2.0-93691f?style=for-the-badge)](LICENSE)
 
-## The claim this is built on
+[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Firestore](https://img.shields.io/badge/Firestore-b6862c?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com/docs/firestore)
+[![Gemini](https://img.shields.io/badge/Gemini-8e44ad?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
 
-The Department of Land Resources publishes its own register of RTI applications and how each one was disposed of, under section 4 of the Act. That register was downloaded and parsed in full: 3,128 uniquely numbered applications, 2,797 of them returned to the applicant, not answered, with no refund of the fee. The department states the reason itself, quoting a 2008 Office Memorandum: an application concerning a State subject, most often a land record, does not have to be transferred by a Central Public Information Officer. It is simply sent back.
+[The claim](#-the-claim-this-is-built-on) &middot;
+[The stack](#-a-map-of-the-stack) &middot;
+[Architecture](#-architecture) &middot;
+[The statutory clock](#-the-statutory-clock-visualised) &middot;
+[Backend](#-backend-deep-dive) &middot;
+[Screenshots](#-screenshots) &middot;
+[Evaluation](#-testing-and-evaluation) &middot;
+[Run it](#-running-it-locally)
+
+</div>
+
+---
+
+## &#128220; The claim this is built on
+
+The Department of Land Resources publishes its own register of RTI applications and how each one was disposed of, under section 4 of the Act. That register was downloaded and parsed in full: **3,128** uniquely numbered applications, **2,797** of them returned to the applicant, not answered, with no refund of the fee. The department states the reason itself, quoting a 2008 Office Memorandum: an application concerning a State subject, most often a land record, does not have to be transferred by a Central Public Information Officer. It is simply sent back.
 
 That register belongs to a central land department, and land is almost entirely a State subject, so its return rate is not representative of RTI practice nationally and should never be quoted as one. It is the clearest primary source available for the specific failure this product targets: the section 6(3) transfer duty does not reach across the Union to State line, and an application addressed to the wrong level of government is a defect that can be caught before it is filed, not just diagnosed afterward.
 
-Full sourcing, the national context figures, and the honesty caveat around the register are on the [Methodology](/methodology) page inside the running app.
+> Everyone else writes the application. Adhikaar decides whether the authority you have chosen can lawfully answer it, before a document is produced, then runs the statutory clock and drafts the appeal the day the authority misses it.
 
-## What it does
+Full sourcing, the national context figures, and the honesty caveat around the register live on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page inside the running app.
 
-1. **Remedy triage.** Decides whether the grievance needs a records request at all before drafting anything. A refund, a wage payment or an eviction stopping is not something a Public Information Officer can grant; those are routed to the correct forum instead, with consumer pecuniary jurisdiction computed from the price paid.
-2. **Jurisdiction triage.** Classifies the subject matter against the Constitution's Seventh Schedule, Union, State or Concurrent, before an authority is ever suggested. Selecting a Central authority for a State subject is blocked outright, citing the exact rule and the DoPT Office Memorandum behind it.
-3. **The legality linter.** Eighteen deterministic rules run against every drafted question, each one citing the section of the Right to Information Act it comes from. An opinion-seeking question ("why did you reject this") is flagged and rewritten as a records request before it is ever posted, since section 2(f) does not entitle an applicant to an opinion the authority has not already recorded.
-4. **The statutory clock.** Once a case is marked filed, every deadline is computed and tracked: the thirty-day response window under section 7(1), the forty-eight hour life-or-liberty track, the First Appeal window under section 19(1), the Second Appeal window under section 19(3). A daily sweep (demonstrated manually in the running app, intended as a Cloud Scheduler job in production) checks every open case and, on a lapsed deadline, moves it to a deemed refusal and drafts the First Appeal automatically, citing section 7(2), section 19(1) and the free of cost provision at section 7(6), with no further input required.
-5. **A real PDF.** The finished application exports as a formal, properly addressed document, ready for a human to review and post. Nothing is filed automatically.
+---
 
-## The boundary between code and a language model
+## &#129504; A map of the stack
 
-This system does not ask a model to decide anything a citizen's fee or filing depends on. A model may propose and phrase; it may never adjudicate or compute. The full table is on the Methodology page; the short version:
+A mind map of every library actually in `package.json`, grouped by what it does in this codebase, not a generic marketing list.
 
-| Decision | Made by |
-|---|---|
-| Union, State or Concurrent subject matter | Deterministic code, a Seventh Schedule mapping |
-| Whether a question is legally refusable | Deterministic code, the eighteen-rule linter |
-| Deadline arithmetic | Deterministic code, pure date functions |
-| Application fee for a given state | Deterministic code, a cited lookup table |
-| Whether a legal claim may render on screen | Deterministic code, a citation render gate that throws on an unresolved citation |
-| Rephrasing a question, translation, tone | Proposed by a rule-based rewrite; a human accepts or rejects it |
+```mermaid
+mindmap
+  root((Adhikaar))
+    Frontend
+      Next.js 16 App Router
+      React 19
+      TypeScript 5
+      Tailwind CSS 4
+      Server Actions
+      Fraunces / Source Serif 4 / IBM Plex Mono
+    Backend and Data
+      Firestore
+        firebase-admin
+        roles/datastore.user only
+      Local JSON file store
+        automatic fallback
+      In-process rate limiter
+      Vercel Serverless Functions
+    Deterministic Core
+      Seventh Schedule classifier
+      18-rule legality linter
+      Statutory deadline engine
+      pdf-lib PDF generation
+    AI Layer, optional
+      Gemini via @google/genai
+      3-tier fallback chain
+      Plain-language translation
+      Rewrite polishing
+    Tooling
+      Vitest, 109 tests
+      ESLint
+      tsx eval harness
+      Playwright live verification
+```
 
-No Gemini or other model API key is required to run this prototype end to end, or to file a single case. Every decision above is plain TypeScript, which is also why it is fully testable offline, and why the 94-test suite and the evaluation harness both run with no key configured. A key only turns on two additive, clearly-labelled phrasing features described below.
+---
 
-## Running it
+## &#128268; Technology cards
+
+Every card below is tied to a real file in this repository, not a generic "why we love this framework" blurb.
+
+| Technology | Role here | Where |
+| :--- | :--- | :--- |
+| **Next.js 16 (App Router, Turbopack)** | Server Components for every read path, Server Actions for every mutation, one route handler for the binary PDF response | `src/app/`, `src/lib/actions.ts` |
+| **React 19** | Client islands only where live feedback is needed: the question composer's inline linter, the citation popovers | `src/components/QuestionComposer.tsx`, `src/components/CitationTag.tsx` |
+| **TypeScript 5** | A single `CaseRecord` shape shared by both storage backends, the PDF generator, the sweep engine and every UI surface, so a schema change is caught at compile time everywhere it matters | `src/lib/types.ts` |
+| **Tailwind CSS 4** | A bookish, parchment-and-oxblood design system, sharp corners everywhere except the wax-seal brand mark, deliberately not blue and purple SaaS defaults | `src/app/globals.css` |
+| **Firestore (`firebase-admin`)** | The production case store, used automatically once a service account is present in the environment, org-scoped, shared correctly across serverless instances | `src/lib/store/firestoreStore.ts` |
+| **Local JSON file store** | The zero-setup fallback used when Firestore is not configured, so the product runs with no cloud account at all | `src/lib/store/fileStore.ts` |
+| **`@google/genai` (Gemini)** | Strictly for the two things a model is allowed to do here: propose a rewrite, phrase a translation. It never decides jurisdiction, lints a question, or computes a deadline | `src/lib/gemini/client.ts` |
+| **`pdf-lib`** | Builds the actual filed document server-side: applicant block, correctly addressed CPIO block, numbered questions, fee declaration, no template engine in between | `src/lib/pdf/generate.ts` |
+| **Vitest** | 109 tests: every linter rule fixtured pass and fail, deadline arithmetic, the citation render gate, the full sweep-to-appeal pipeline, the Gemini fallback chain mocked at the SDK boundary | `src/**/*.test.ts` |
+| **Vercel** | Hosts the live deployment; Firestore and Gemini credentials are set as encrypted project environment variables, never committed | `vercel.json` implicit, `README.md` deployment section below |
+
+---
+
+## &#127959;&#65039; Architecture
+
+The real request flow, not an idealised one. The Gemini layer is drawn as a clearly separate, optional side-branch feeding only the translation and rewrite-polish features, because that separation is the whole point of the anti-wrapper doctrine on the Methodology page: **a model may propose and phrase, it may never adjudicate or compute.**
+
+```mermaid
+graph TD
+    A[Operator: grievance intake] -->|Server Action| B[intakeAction]
+    B --> C[Remedy triage<br/>deterministic]
+    B --> D[Jurisdiction triage<br/>Seventh Schedule, deterministic]
+    C --> E[CaseStore router]
+    D --> E
+    E -->|FIREBASE_* set| F[(Firestore)]
+    E -->|not set| G[(Local JSON file)]
+
+    H[Operator: draft a question] -->|live, client-side| I[18-rule legality linter<br/>deterministic]
+    I --> E
+
+    E --> J[Statutory deadline engine<br/>deterministic]
+    J --> K[Daily sweep]
+    K -->|deadline lapsed| L[Deemed refusal<br/>auto-drafted First Appeal]
+    L --> E
+
+    E --> M[PDF route handler]
+    M --> N[pdf-lib]
+    N --> O[Downloaded application]
+
+    I -. optional, human-approved .-> P[[Gemini: rewrite polish]]
+    E -. optional, human-reviewed .-> Q[[Gemini: plain-language translation]]
+
+    style P fill:#eddad3,stroke:#7c2415,stroke-dasharray: 4 3
+    style Q fill:#eddad3,stroke:#7c2415,stroke-dasharray: 4 3
+```
+
+---
+
+## &#9203; The statutory clock, visualised
+
+The moneyshot flow, proven end to end against the live deployment, including an independent `curl` request that fetched a case from a completely different serverless instance than the one that created it, confirming the persistence actually works across instances, not just within one browser session.
+
+```mermaid
+sequenceDiagram
+    participant O as Operator
+    participant A as Adhikaar
+    participant S as Firestore
+
+    O->>A: Mark filed (date, life/liberty flag)
+    A->>A: computeInitialDeadlines()<br/>Section 7(1): 30 days, or 48h
+    A->>S: persist deadlines
+    Note over A: Daily sweep (Cloud Scheduler in production,<br/>a manual trigger in this demo)
+    A->>A: sweepCase(): is the response deadline overdue?
+    alt deadline lapsed
+        A->>A: Deemed refusal, Section 7(2)
+        A->>A: draftFirstAppeal()<br/>cites Sections 7(2), 19(1), 7(6)
+        A->>S: persist the drafted appeal
+        A-->>O: First Appeal ready for review,<br/>free of cost under Section 7(6)
+    else still pending
+        A-->>O: Awaiting response
+    end
+```
+
+---
+
+## &#9881;&#65039; Backend deep-dive
+
+**The `CaseStore` interface.** Every route, action and page imports persistence from exactly one place, `src/lib/store.ts`, which is a thin router over two interchangeable implementations behind a shared `CaseStore` interface (`src/lib/store/types.ts`):
+
+- `src/lib/store/firestoreStore.ts`, used automatically once `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` are present in the environment. This is what the live deployment runs on.
+- `src/lib/store/fileStore.ts`, the zero-setup fallback. On Vercel it writes to `/tmp` rather than the read-only bundle directory, since only `/tmp` is writable at runtime there; locally it writes to `.data/cases.json`, gitignored since it can hold citizen personal information during testing.
+
+The router pattern exists so the rest of the codebase never has to know which backend it is talking to, and so a production credential swap touches one file, not every call site.
+
+**Cost safety, three independent layers.** The Firestore database backing the live URL was provisioned on Google Cloud's perpetual free tier, not a trial credit: 50,000 reads, 20,000 writes and 20,000 deletes a day, 1 GiB of storage, every day, for as long as the project exists.
+
+1. **The free-tier ceiling itself.** Ordinary demo traffic never comes close.
+2. **A GCP billing budget alert** on the dedicated project, firing at 1 cent, 50 cents and one dollar of spend.
+3. **An in-process write rate limiter** (`src/lib/firestore/rateLimit.ts`, 30 writes per minute per instance, six of its own tests), a backstop against a bug or a scripted loop, not the primary control.
+
+The service account itself holds only `roles/datastore.user` on a dedicated GCP project, unable to touch billing or create other resources even if the key were compromised.
+
+**The Gemini layer, and its own fallback chain.** `generateWithFallback()` in `src/lib/gemini/client.ts` tries `gemini-3.7-flash`, then `gemini-3.6-flash`, then `gemini-2.5-flash`, moving to the next model on any request-level failure or an empty response, so one model being unavailable, renamed or deprecated cannot take a feature down. Building and testing this chain before switching models surfaced two real, external facts worth recording here rather than hiding: `gemini-2.5-flash` is now fully closed to new API keys (the API's own error names `gemini-3.6-flash` as the replacement), and separately, the newer models can return `429 RESOURCE_EXHAUSTED` on a project whose AI Studio prepayment credits are depleted, confirmed by calling the REST API directly rather than guessing from the SDK error alone. Neither AI feature is load-bearing: every decision that matters, jurisdiction, legality, deadlines, fees, citations, is deterministic code that was built and fully tested with zero Gemini access at all.
+
+---
+
+## &#128248; Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+**The landing page**, opening with the DoLR register evidence rather than a feature list.
+
+![Landing page](docs/screenshots/landing.png)
+
+</td>
+<td width="50%">
+
+**The Methodology page**, the anti-wrapper table and the scoping table stated in the open.
+
+![Methodology page](docs/screenshots/methodology.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Grievance intake**, the raw description goes straight to the triage engines, nothing cleaned up first.
+
+![New case intake](docs/screenshots/new-case.png)
+
+</td>
+<td width="50%">
+
+**A populated case workspace** mid-sweep: jurisdiction triage, the legality linter with citations, the statutory clock, and the auto-drafted First Appeal, all on one page.
+
+![Case workspace](docs/screenshots/case-workspace.png)
+
+</td>
+</tr>
+</table>
+
+---
+
+## &#129513; Testing and evaluation
+
+**109 automated tests**, `npm run test`: every one of the eighteen legality-linter rules gets a fixture that must fire it and one that must not, deadline arithmetic is checked to the day across month boundaries, the citation render gate is proven to throw on an unresolved citation rather than render an unsourced claim, the full sweep-to-deemed-refusal-to-appeal pipeline is exercised with real dates, PDF generation is checked for the actual `%PDF-` magic bytes, and the Gemini fallback chain is tested against a mocked SDK boundary for both the happy path and every fallback tier.
+
+**A real evaluation harness**, `npm run eval`, measured against a 220-record gold set sampled deterministically from the same DoLR disclosure register cited above, each one a real citizen's application text paired with its actual government-recorded outcome:
+
+| Measure | Result |
+| :--- | :--- |
+| Classified as a State subject from text alone | 131 / 220 (59.5%) |
+| Specifically recognised as "Land and land revenue" | 124 / 220 (56.4%) |
+| Not confidently classified, reported as such rather than guessed | 73 / 220 (33.2%) |
+| Remedy classifier: correctly read as a records request | 219 / 220 (99.5%) |
+
+Read the 56.4 percent plainly: on real, messy, first-person citizen writing, the classifier recognises just over half of these land queries by keyword and pattern alone, and says it does not know about roughly a third rather than guessing. Both numbers are published because a rule engine that only ever announces its successes is not trustworthy, and this one is asked to make legal-adjacent decisions.
+
+---
+
+## &#128640; Running it locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Case data is stored in a local JSON file at `.data/cases.json`, created on first run and excluded from version control since it can contain citizen personal information during local testing. The architecture this design intends for production is Firestore, org-scoped, with a Cloud Scheduler job running the daily sweep; the local file store implements the same function signatures so that swap touches one file, `src/lib/store.ts`.
+Open `http://localhost:3000`. No cloud account, no API key, no setup beyond `npm install` is required: the jurisdiction engine, the legality linter, the deadline clock and PDF export are all deterministic code, and case data is stored in a local JSON file created automatically on first run.
 
-**Deployed on Vercel at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app), backed by a real Firestore database.** `src/lib/store.ts` uses Firestore automatically once a service account is present in the environment (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`), which is how the live deployment runs; without those three set, it falls back to the local JSON file described above, which is how local development runs by default. A serverless function's own bundle directory is read-only at runtime, so the file store cannot be the production answer on Vercel regardless: only `/tmp` is writable there, and it is ephemeral and not shared across instances. That fallback still exists and is used automatically if Firestore is not configured, so the product runs with zero cloud setup, but it is not what the live URL runs on.
-
-### Cost safety on the live deployment
-
-The Firestore database backing the live URL was provisioned on Google Cloud's perpetual free tier for Firestore, not a trial credit: 50,000 reads, 20,000 writes and 20,000 deletes a day, 1 GiB of storage, every day, for as long as the project exists. Three layers sit on top of that ceiling rather than relying on it alone:
-
-1. **A GCP billing budget alert** on the project, firing at 1 cent, 50 cents and one dollar of spend, so a human is notified quickly if anything unexpected happens.
-2. **An in-process write rate limit** (`src/lib/firestore/rateLimit.ts`), thirty writes per minute per server instance, as a backstop against a bug or a scripted loop, not the primary control.
-3. **A minimally-scoped service account**, holding only `roles/datastore.user` on a dedicated GCP project, unable to touch billing or create other resources even if the key were compromised.
-
-None of this is a hard, provider-enforced $0 cap; Google Cloud does not offer one without disabling billing entirely, which would also take the database down. Ordinary hackathon-demo traffic does not come close to the free-tier ceiling, and the budget alert is the real backstop if something unexpected ever did.
+```bash
+npm run test    # 109 tests
+npm run eval    # jurisdiction classifier measured against the 220-record DoLR gold set
+npm run build   # production build
+```
 
 ### Optional: Gemini-backed features
-
-Every decision the product makes, jurisdiction, legality, deadlines, fees, citations, is plain deterministic code and needs no API key at all. Two additive features use Gemini for the two things a model is allowed to do here, propose a rewrite and phrase a translation, both described on the Methodology page:
-
-- A plain-language, translated copy of the filed questions for the citizen, always shown beside the formal English original.
-- An optional, more natural-sounding alternative to the linter's own mechanical rewrite of a non-compliant question, offered beside the mechanical one, never in place of it.
-
-To turn these on:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Fill in `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey), wired to a Gemini-enabled Google Cloud project. `GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`. Without a key, both features show a clear inline message rather than failing silently or affecting anything else on the page, which is exactly what the automated test suite and the browser walkthrough below were run against before any key existed.
+Fill in `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). The app tries `gemini-3.7-flash`, then `gemini-3.6-flash`, then `gemini-2.5-flash` automatically; `GEMINI_MODEL` is optional and, if set, is tried first, ahead of that built-in chain rather than in place of it. Without a key, both features show a clear inline message rather than failing silently, exactly the state the full automated test suite runs against.
 
-```bash
-npm run test    # 94 tests: every linter rule fixtured pass and fail, deadline arithmetic, the citation gate, jurisdiction and remedy triage, the sweep pipeline, PDF generation
-npm run eval    # measures the jurisdiction classifier against a 220-record gold set sampled from the real DoLR disclosure register
-npm run build   # production build
-```
+### Optional: Firestore persistence
 
-## What is covered, and what is deliberately not
+Set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` from a service account scoped to `roles/datastore.user` against your own Firestore database. Without these three set, the app falls back automatically to the local file store described above.
 
-Two states are covered by name in the authority directory, Delhi and Maharashtra, alongside twelve central ministries and departments. No other state is covered, and the system says so in the interface rather than guessing an address. Tenancy disputes are recognised and routed to the correct forum by name, but no state rent authority is covered in depth, since tenancy law has no uniform national statute. The Scheme Eligibility Reader direction from the problem statement was deliberately left unbuilt: telling someone they qualify for a scheme does not move them closer to receiving it, since documentation and last-mile delivery are usually the real constraint. The full reasoning for every scoping decision is on the Methodology page.
+---
+
+## &#127760; Deployed on Vercel
+
+**Live at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app)**, backed by a real Firestore database, verified with an independent `curl` request that fetched a case from a different serverless instance than the one that created it. `src/lib/store.ts` selects Firestore automatically once the three `FIREBASE_*` variables are present as encrypted Vercel project environment variables, which is how the live deployment runs; local development uses the file fallback by default.
+
+---
+
+## &#129504; What this system decides, what it merely proposes
+
+| Concern | Deterministic code | Language model |
+| :--- | :--- | :--- |
+| Union, State or Concurrent subject matter | Decides, against a Seventh Schedule mapping | Not consulted |
+| Is this question legally refusable | Decides, against the eighteen-rule linter | Never |
+| Statutory deadline arithmetic | Decides, pure date functions | Never |
+| Application fee for a given state | Decides, a cited lookup table | Never |
+| Whether a legal claim may render on screen | Decides, the citation render gate | Never |
+| Which authority within a jurisdiction to suggest | Retrieval and filtering choose the candidates | May re-rank, and must cite the candidate it picks |
+| A more natural phrasing of a mechanical rewrite | Sets the boundary the rewrite must stay inside | Optional, shown beside the mechanical version, applied only if an operator accepts it |
+| Plain-language translation for the citizen | Supplies the questions verbatim; the model may not add, drop or reinterpret any of them | Optional, always shown beside the formal English filing |
+
+The rule, stated plainly: a model may propose and phrase. It may never adjudicate or compute. The full reasoning, including how each of the problem statement's four illustrative directions was scoped, and the one left deliberately unbuilt, is on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page.
+
+---
+
+## &#128203; What is covered, and what is not
+
+Two states are covered by name in the authority directory, Delhi and Maharashtra, alongside twelve central ministries and departments. No other state is covered, and the system says so in the interface rather than guessing an address. Tenancy disputes are recognised and routed to the correct forum by name, but no state rent authority is covered in depth, since tenancy law has no uniform national statute. Filing is never automated: Adhikaar prepares a document for a human to review and post, it does not submit anything to a government portal on anyone's behalf.
 
 This is an assistive drafting tool, not a source of legal advice, and every document it produces requires human review before it is filed.
 
-## Stack
+---
 
-Next.js 16 with the App Router, TypeScript, Tailwind CSS 4. Server Actions for mutations, a file-backed store standing in for Firestore, `pdf-lib` for document generation, Vitest for the test suite. No external API calls are required to run or evaluate the deterministic core described above.
+## &#128220; License
 
-## License
+Apache License, Version 2.0. See [`LICENSE`](LICENSE).
 
-Apache License, Version 2.0. See `LICENSE`.
+<div align="center">
+
+*Not built to look busy. Built to be right before it is filed.*
+
+</div>
