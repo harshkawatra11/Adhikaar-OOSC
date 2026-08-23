@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "eval": "tsx eval/run.ts"
+    "eval": "tsx eval/run.ts",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",

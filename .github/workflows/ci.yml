@@ -1,0 +1,74 @@
+name: CI
+
+# Runs on every push and every pull request, so a broken commit is
+# caught whether it lands directly on a branch or arrives via a PR.
+# One workflow, one job, four sequential gates (lint, typecheck, test,
+# build) in cheapest-first order: a lint failure exits in seconds
+# instead of waiting for a full Next.js production build to fail later
+# for the same reason. src/lib is fully unit-tested (109 tests as of
+# writing) and this pipeline treats any red step as a hard stop, never
+# a warning: nothing here is allowed to pass "with issues."
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+# A new push to the same branch cancels the in-flight run for that
+# branch instead of queueing behind it, so CI status always reflects
+# the latest commit rather than a stale one still finishing.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      # npm ci is deterministic (installs exactly what package-lock.json
+      # pins) and fails loudly on a lockfile/package.json mismatch,
+      # which is exactly the failure mode you want caught in CI rather
+      # than discovered at deploy time.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Every test run also asserts src/lib stays framework-free and
+      # deterministic; a failure here means either real behavior broke
+      # or the deterministic/model boundary was crossed.
+      - name: Test
+        run: npm run test
+
+      # Compiles the actual Next.js production build, the same command
+      # Vercel's own build step runs. A build failure here means the
+      # same push would have failed to deploy; catching it in CI keeps
+      # a broken production deploy from ever being attempted.
+      - name: Build
+        run: npm run build
+        env:
+          # The build must succeed with no secrets configured, exactly
+          # as a fresh clone would: Gemini and Firestore are additive
+          # and optional by design (see src/lib/gemini/client.ts and
+          # src/lib/store.ts), and CI is the place that proves it.
+          NODE_ENV: production
