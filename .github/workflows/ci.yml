@@ -2,12 +2,22 @@ name: CI
 
 # Runs on every push and every pull request, so a broken commit is
 # caught whether it lands directly on a branch or arrives via a PR.
-# One workflow, one job, four sequential gates (lint, typecheck, test,
-# build) in cheapest-first order: a lint failure exits in seconds
-# instead of waiting for a full Next.js production build to fail later
-# for the same reason. src/lib is fully unit-tested (109 tests as of
-# writing) and this pipeline treats any red step as a hard stop, never
-# a warning: nothing here is allowed to pass "with issues."
+# One workflow, one job, three sequential gates (lint, test, build) in
+# cheapest-first order: a lint failure exits in seconds instead of
+# waiting for a full Next.js production build to fail later for the
+# same reason. src/lib is fully unit-tested (109 tests as of writing)
+# and this pipeline treats any red step as a hard stop, never a
+# warning: nothing here is allowed to pass "with issues."
+#
+# There is no standalone typecheck step here on purpose, even though
+# `npm run typecheck` exists for local use: Next.js generates ambient
+# route types (e.g. LayoutProps) as a side effect of `next build`/
+# `next dev`, so `tsc --noEmit` only succeeds in a workspace that has
+# already been built at least once. A real first run of this pipeline
+# against a clean checkout failed on exactly that gap; `next build`
+# itself runs the same TypeScript check afterward, with the generated
+# types actually present, so the Build step below is the real
+# typecheck gate in CI.
 
 on:
   push:
@@ -50,9 +60,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
 
       # Every test run also asserts src/lib stays framework-free and
       # deterministic; a failure here means either real behavior broke
