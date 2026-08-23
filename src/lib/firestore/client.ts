@@ -51,6 +51,13 @@ export function getFirestoreDb(): Firestore {
       app = getApps()[0]!;
     }
     db = getFirestore(app);
+    // AuthorityCandidate.state and several other CaseRecord fields are
+    // legitimately optional (a Union-jurisdiction authority has no
+    // state), which JavaScript represents as `undefined`. The Firestore
+    // client rejects `undefined` field values by default; this setting
+    // is the standard, idiomatic fix rather than hand-stripping
+    // undefined keys at every call site that writes a CaseRecord.
+    db.settings({ ignoreUndefinedProperties: true });
   }
   return db;
 }
