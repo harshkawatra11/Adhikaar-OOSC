@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Serif_4, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Source_Serif_4, IBM_Plex_Mono, Tiro_Devanagari_Hindi } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { CourtLoader } from "@/components/CourtLoader";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -25,6 +26,13 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
+const tiroDevanagari = Tiro_Devanagari_Hindi({
+  variable: "--font-tiro-devanagari",
+  subsets: ["devanagari"],
+  weight: "400",
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
   title: "Adhikaar: RTI Casework, Filed Correctly",
   description:
@@ -35,9 +43,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${sourceSerif.variable} ${plexMono.variable} h-full`}
+      className={`${fraunces.variable} ${sourceSerif.variable} ${plexMono.variable} ${tiroDevanagari.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        <CourtLoader />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

@@ -5,6 +5,7 @@ import { CitationTag } from "@/components/CitationTag";
 import { QuestionComposer } from "@/components/QuestionComposer";
 import { PolishRewriteButton } from "@/components/PolishRewriteButton";
 import { PlainLanguageCopy } from "@/components/PlainLanguageCopy";
+import { SubmitButton } from "@/components/SubmitButton";
 import {
   selectAuthorityAction,
   removeQuestionAction,
@@ -140,13 +141,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </label>
               ))}
-              <button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Confirming…"
                 className="border-2 px-5 py-2 font-body font-semibold"
                 style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
               >
                 Confirm authority
-              </button>
+              </SubmitButton>
             </form>
           )}
         </Section>
@@ -171,9 +172,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                     await removeQuestionAction(caseRecord.id, q.id);
                   }}
                 >
-                  <button type="submit" className="text-xs underline shrink-0" style={{ color: "var(--brick)" }}>
+                  <SubmitButton
+                    pendingLabel="Removing…"
+                    className="text-xs underline shrink-0"
+                    style={{ color: "var(--brick)" }}
+                  >
                     Remove
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
               {q.originalText && (
@@ -200,9 +205,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                           <p className="italic mb-1" style={{ color: "var(--forest)" }}>
                             Suggested rewrite: &ldquo;{f.suggestedRewrite}&rdquo;
                           </p>
-                          <button type="submit" className="text-xs underline font-medium" style={{ color: "var(--forest)" }}>
+                          <SubmitButton
+                            pendingLabel="Accepting…"
+                            className="text-xs underline font-medium"
+                            style={{ color: "var(--forest)" }}
+                          >
                             Accept rewrite
-                          </button>
+                          </SubmitButton>
                         </form>
                       )}
                       {f.suggestedRewrite && (
@@ -282,13 +291,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <label className="flex items-center gap-2 text-sm" style={{ color: "var(--ink-soft)" }}>
               <input type="checkbox" name="viaApio" /> Filed via an Assistant Public Information Officer
             </label>
-            <button
-              type="submit"
+            <SubmitButton
+              pendingLabel="Filing…"
               className="border-2 px-5 py-2 font-body font-semibold"
               style={{ background: "var(--forest)", borderColor: "var(--ink)", color: "var(--paper)" }}
             >
               Mark filed and start the clock
-            </button>
+            </SubmitButton>
           </form>
         ) : (
           <div className="space-y-3">
@@ -339,13 +348,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                   <span className="block text-xs mb-1" style={{ color: "var(--ink-faint)" }}>Simulate &ldquo;today&rdquo; as</span>
                   <input type="date" name="simulateDate" className="border p-2 text-sm" style={{ borderColor: "var(--rule-strong)" }} />
                 </label>
-                <button
-                  type="submit"
+                <SubmitButton
+                  pendingLabel="Running…"
                   className="border-2 px-4 py-2 text-sm font-semibold"
                   style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
                 >
                   Run sweep
-                </button>
+                </SubmitButton>
               </form>
             </details>
           </div>
@@ -399,9 +408,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             className="w-full border p-3 text-sm mb-3"
             style={{ borderColor: "var(--rule-strong)", background: "var(--paper)", color: "var(--ink)" }}
           />
-          <button type="submit" className="border-2 px-4 py-2 text-sm font-semibold" style={{ borderColor: "var(--ink)", color: "var(--ink)" }}>
+          <SubmitButton
+            pendingLabel="Saving…"
+            className="border-2 px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
+          >
             Save notes
-          </button>
+          </SubmitButton>
         </form>
       </Section>
     </div>

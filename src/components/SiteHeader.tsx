@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Seal } from "@/components/Seal";
+import { GithubMark } from "@/components/GithubMark";
 
 export function SiteHeader() {
   return (
@@ -27,13 +28,14 @@ export function SiteHeader() {
             Methodology
           </Link>
           <a
-            href="https://github.com/harshkawatra11/oosc-hackathon"
-            className="border px-3 py-1.5 font-mono text-xs uppercase tracking-wide hover:bg-[var(--paper-raised)]"
-            style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
+            href="https://github.com/harshkawatra11/Adhikaar-OOSC"
+            className="github-btn border-2 flex items-center gap-2 px-3 py-1.5 font-body text-sm font-semibold transition-colors"
+            style={{ borderColor: "var(--ink)", background: "var(--ink)", color: "var(--paper)" }}
             target="_blank"
             rel="noreferrer"
           >
-            Source
+            <GithubMark size={16} />
+            GitHub
           </a>
         </nav>
       </div>
