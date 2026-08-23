@@ -190,11 +190,23 @@ function daysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// The full purge-and-reseed sequence is 40+ Firestore writes, comfortably
+// over the in-process rate limiter's 30-per-60-seconds backstop
+// (src/lib/firestore/rateLimit.ts) if fired back to back. That limiter
+// is a deliberate cost-safety control, not a bug to route around; this
+// script paces itself under it instead, at roughly 24 writes per
+// 60-second window, so a full reseed always completes in one run.
+const WRITE_PACE_MS = 2500;
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function purgeExisting(): Promise<void> {
   const existing = await store.listCases();
   console.log(`Purging ${existing.length} existing case(s)...`);
   for (const c of existing) {
     await store.deleteCase(c.id);
+    await sleep(WRITE_PACE_MS);
   }
 }
 
@@ -219,6 +231,7 @@ async function buildScenario(s: Scenario): Promise<void> {
     deadlines: [],
     operatorNotes: "",
   });
+  await sleep(WRITE_PACE_MS);
 
   if (s.stage === "triaged") {
     console.log(`  ${s.name}: triaged only (${jurisdiction.subjectMatter}, ${jurisdiction.candidates.length} candidate(s))`);
@@ -238,6 +251,7 @@ async function buildScenario(s: Scenario): Promise<void> {
       selectedAuthorityId: topCandidate.authorityId,
       jurisdiction: reJurisdiction,
     }))!;
+    await sleep(WRITE_PACE_MS);
   }
 
   const questions: DraftQuestion[] = [];
@@ -253,6 +267,7 @@ async function buildScenario(s: Scenario): Promise<void> {
       questions,
       status: record.status === "triaged" ? "drafted" : record.status,
     }))!;
+    await sleep(WRITE_PACE_MS);
   }
 
   if (s.stage === "drafted") {
@@ -263,6 +278,7 @@ async function buildScenario(s: Scenario): Promise<void> {
   if (s.filedDate) {
     const deadlines = computeInitialDeadlines({ filedDate: s.filedDate, lifeOrLiberty: false, viaApio: false });
     record = (await store.updateCase(record.id, { status: "awaiting_response", filedDate: s.filedDate, deadlines }))!;
+    await sleep(WRITE_PACE_MS);
   }
 
   if (s.stage === "filed") {
@@ -285,6 +301,7 @@ async function buildScenario(s: Scenario): Promise<void> {
         patch.operatorNotes = `Auto-drafted first appeal (${new Date().toISOString().slice(0, 10)})\n\n${result.firstAppealDraft}`;
       }
       record = (await store.updateCase(record.id, patch))!;
+      await sleep(WRITE_PACE_MS);
     }
     console.log(`  ${s.name}: swept -> status ${record.status}`);
   }
