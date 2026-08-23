@@ -181,45 +181,6 @@ The service account itself holds only `roles/datastore.user` on a dedicated GCP 
 
 ---
 
-## &#128248; Screenshots
-
-<table>
-<tr>
-<td width="50%">
-
-**The landing page**, opening with the DoLR register evidence rather than a feature list.
-
-![Landing page](docs/screenshots/landing.png)
-
-</td>
-<td width="50%">
-
-**The Methodology page**, the anti-wrapper table and the scoping table stated in the open.
-
-![Methodology page](docs/screenshots/methodology.png)
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**Grievance intake**, the raw description goes straight to the triage engines, nothing cleaned up first.
-
-![New case intake](docs/screenshots/new-case.png)
-
-</td>
-<td width="50%">
-
-**A populated case workspace** mid-sweep: jurisdiction triage, the legality linter with citations, the statutory clock, and the auto-drafted First Appeal, all on one page.
-
-![Case workspace](docs/screenshots/case-workspace.png)
-
-</td>
-</tr>
-</table>
-
----
-
 ## &#129513; Testing and evaluation
 
 **109 automated tests**, `npm run test`: every one of the eighteen legality-linter rules gets a fixture that must fire it and one that must not, deadline arithmetic is checked to the day across month boundaries, the citation render gate is proven to throw on an unresolved citation rather than render an unsourced claim, the full sweep-to-deemed-refusal-to-appeal pipeline is exercised with real dates, PDF generation is checked for the actual `%PDF-` magic bytes, and the Gemini fallback chain is tested against a mocked SDK boundary for both the happy path and every fallback tier.
