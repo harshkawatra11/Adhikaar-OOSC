@@ -31,6 +31,9 @@ export async function SiteHeader() {
           <Link href="/rights" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
             Rights Navigator
           </Link>
+          <Link href="/schemes" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
+            Scheme Eligibility
+          </Link>
           <Link href="/methodology" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
             Methodology
           </Link>
