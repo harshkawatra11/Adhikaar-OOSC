@@ -22,11 +22,11 @@ export async function SiteHeader() {
           </div>
         </Link>
         <nav className="flex items-center gap-6 font-body text-sm">
-          <Link href="/docket" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            Docket
+          <Link href="/my" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
+            My filings
           </Link>
-          <Link href="/docket/new" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            New Case
+          <Link href="/start" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
+            Start a new filing
           </Link>
           <Link href="/methodology" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
             Methodology

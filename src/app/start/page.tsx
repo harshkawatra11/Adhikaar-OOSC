@@ -1,21 +1,27 @@
 import { intakeAction } from "@/lib/actions";
 import { GrievanceField } from "@/components/GrievanceField";
+import { requireSession } from "@/lib/auth/session";
 
-export const metadata = { title: "New Case | Adhikaar" };
+export const metadata = { title: "Start a filing | Adhikaar" };
 
-export default function NewCasePage() {
+// This page is a placeholder pending WP4, which replaces the single
+// form below with a guided interview. Kept working in the meantime,
+// with citizen-facing copy rather than operator-facing copy.
+export default async function StartPage() {
+  await requireSession("/start");
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] mb-2" style={{ color: "var(--gilt)" }}>
-        New case
+        Start a filing
       </p>
       <h1 className="font-display font-bold text-3xl mb-3" style={{ color: "var(--ink)" }}>
-        Take down the grievance
+        Tell us what went wrong
       </h1>
       <p className="mb-10 leading-relaxed" style={{ color: "var(--ink-soft)" }}>
-        Write the grievance the way the citizen described it. Do not clean it up first: the triage engine reads
-        the raw description to classify the subject matter and to decide whether a Right to Information application
-        is even the right instrument.
+        Describe it the way you would say it out loud. You do not need to know the right words:
+        we read what you write to work out the subject and which office is actually responsible,
+        before anything is drafted.
       </p>
 
       <form action={intakeAction} className="space-y-8">
@@ -75,7 +81,7 @@ export default function NewCasePage() {
           className="border-2 px-8 py-3 font-body font-semibold"
           style={{ background: "var(--seal)", borderColor: "var(--ink)", color: "var(--paper)" }}
         >
-          Run triage
+          See who is responsible
         </button>
       </form>
     </div>

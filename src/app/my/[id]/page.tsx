@@ -17,7 +17,7 @@ import {
 import { lookupStateFee, CENTRAL_FEE, BPL_EXEMPTION_NOTE } from "@/lib/data/state-fees";
 import { daysUntil, isOverdue } from "@/lib/deadlines";
 import { requireSession } from "@/lib/auth/session";
-import type { LintFinding } from "@/lib/types";
+import type { CaseRecord, LintFinding } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +27,39 @@ const SEVERITY_COLOR: Record<LintFinding["severity"], string> = {
   info: "var(--forest)",
 };
 
+function statusSentence(c: CaseRecord): string {
+  switch (c.status) {
+    case "intake":
+      return "You have started describing this, but nothing has been drafted yet.";
+    case "triaged":
+      return "We have worked out who is responsible for answering you. Add your questions below to build the application.";
+    case "drafted":
+      return "Your application is drafted. Pick the office to write to, then download it.";
+    case "filed":
+    case "awaiting_response":
+      return "You are waiting on a reply. This is when your deadline counts down, and we will tell you the moment it lapses.";
+    case "deemed_refusal":
+      return "The authority did not reply within the statutory period. Under the law, that counts as a refusal, not silence, and a first appeal has already been drafted for you below.";
+    case "first_appeal_drafted":
+      return "Your first appeal is ready. Review it below and send it to the appellate authority.";
+    case "first_appeal_filed":
+      return "Your first appeal has been sent. Waiting on a decision.";
+    case "second_appeal_drafted":
+      return "Your second appeal is ready, for the Information Commission.";
+    case "second_appeal_filed":
+      return "Your second appeal has been sent to the Information Commission.";
+    case "resolved":
+      return "This filing is resolved.";
+    case "out_of_coverage":
+      return "This falls outside what Adhikaar currently covers. See the guidance below for where to go instead.";
+    default:
+      return "";
+  }
+}
+
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { uid } = await requireSession(`/docket/${id}`);
+  const { uid } = await requireSession(`/my/${id}`);
   const caseRecord = await getCase(id, uid);
   if (!caseRecord) notFound();
 
@@ -40,20 +70,26 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     ? lookupStateFee(j.candidates[0]?.state ?? "")
     : CENTRAL_FEE;
 
+  const activeDeadline = caseRecord.deadlines.find((d) => d.status === "pending");
+  const activeOverdue = Boolean(activeDeadline && isOverdue(activeDeadline));
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-12 space-y-10">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b-2" style={{ borderColor: "var(--ink)" }}>
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.15em] mb-2" style={{ color: "var(--ink-faint)" }}>
-            Case {caseRecord.id.slice(0, 8)}
-          </p>
-          <h1 className="font-display font-bold text-3xl mb-2" style={{ color: "var(--ink)" }}>
-            {caseRecord.applicant.name || "Unnamed applicant"}
-          </h1>
-          <p className="max-w-xl" style={{ color: "var(--ink-soft)" }}>{caseRecord.grievanceRaw}</p>
+      <div className="pb-6 border-b-2" style={{ borderColor: "var(--ink)" }}>
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.15em] mb-2" style={{ color: "var(--ink-faint)" }}>
+              Filing {caseRecord.id.slice(0, 8)}
+            </p>
+            <h1 className="font-display font-bold text-3xl mb-2" style={{ color: "var(--ink)" }}>
+              {caseRecord.applicant.name || "Unnamed applicant"}
+            </h1>
+          </div>
+          <StatusChip status={caseRecord.status} />
         </div>
-        <StatusChip status={caseRecord.status} />
+        <p className="max-w-2xl mb-3" style={{ color: "var(--ink-soft)" }}>{statusSentence(caseRecord)}</p>
+        <p className="max-w-xl text-sm" style={{ color: "var(--ink-faint)" }}>{caseRecord.grievanceRaw}</p>
       </div>
 
       {caseRecord.lowConfidenceFields.length > 0 && (
@@ -63,12 +99,39 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         </Banner>
       )}
 
+      {/* Deadline card, prominent */}
+      {activeDeadline && (
+        <div
+          className="border-2 p-6 flex flex-wrap items-center justify-between gap-6"
+          style={{
+            borderColor: activeOverdue ? "var(--brick)" : "var(--forest)",
+            background: activeOverdue ? "var(--brick-tint)" : "var(--forest-tint)",
+          }}
+        >
+          <div>
+            <p className="font-mono text-xs uppercase tracking-wide mb-2" style={{ color: activeOverdue ? "var(--brick)" : "var(--forest)" }}>
+              {activeDeadline.label}
+            </p>
+            <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
+              Under <CitationTag citationId={activeDeadline.citationId} label={activeDeadline.basis} />, due {activeDeadline.dueDate}.
+              {activeOverdue && " This deadline has passed."}
+            </p>
+          </div>
+          <p
+            className="font-display font-bold"
+            style={{ fontSize: "var(--step-5)", color: activeOverdue ? "var(--brick)" : "var(--forest)" }}
+          >
+            {activeOverdue ? `+${Math.abs(daysUntil(activeDeadline))}` : daysUntil(activeDeadline)}
+          </p>
+        </div>
+      )}
+
       {/* Remedy triage */}
       {r && (
-        <Section title="Is this the right instrument?">
+        <Section title="Will an RTI actually get you what you need?">
           <div className="border p-5" style={{ borderColor: "var(--rule-strong)" }}>
             <p className="font-mono text-xs uppercase tracking-wide mb-2" style={{ color: r.remedyClass === "rti" ? "var(--forest)" : "var(--brick)" }}>
-              {r.remedyClass === "rti" ? "Proceed as a Right to Information application" : `Remedy class: ${r.remedyClass}`}
+              {r.remedyClass === "rti" ? "Yes, proceed as a Right to Information application" : `This is really a ${r.remedyClass} matter`}
             </p>
             <p className="mb-2 font-medium" style={{ color: "var(--ink)" }}>{r.forumName}</p>
             <p className="text-sm mb-2" style={{ color: "var(--ink-soft)" }}>{r.guidanceNote}</p>
@@ -89,7 +152,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
       {/* Jurisdiction triage */}
       {j && (
-        <Section title="Which government, and which office?">
+        <Section title="Who is legally required to answer you">
           <div className="mb-4 flex flex-wrap gap-3 text-sm">
             <Tag>{j.scheduleList} subject</Tag>
             <Tag>{j.subjectMatter}</Tag>
@@ -104,7 +167,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
           {j.candidates.length === 0 ? (
             <Banner tone="warn">
-              No authority in this directory matches. This case is out of coverage; do not guess an address.
+              No authority in this directory matches. This filing is out of coverage; we will not guess an address.
             </Banner>
           ) : (
             <form
@@ -148,7 +211,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 className="border-2 px-5 py-2 font-body font-semibold"
                 style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
               >
-                Confirm authority
+                This is the office I will write to
               </SubmitButton>
             </form>
           )}
@@ -156,7 +219,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       )}
 
       {/* Questions */}
-      <Section title="The application">
+      <Section title="Your application">
         <div className="space-y-4 mb-5">
           {caseRecord.questions.length === 0 && (
             <p className="text-sm" style={{ color: "var(--ink-faint)" }}>No questions drafted yet.</p>
@@ -230,7 +293,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       </Section>
 
       {/* Plain-language copy for the citizen */}
-      <Section title="Plain-language copy for the citizen">
+      <Section title="Plain-language copy for you">
         <PlainLanguageCopy
           caseId={caseRecord.id}
           language={caseRecord.applicant.preferredLanguage}
@@ -263,7 +326,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       </Section>
 
       {/* Filing and deadlines */}
-      <Section title="Statutory clock">
+      <Section title="Your deadline">
         {caseRecord.status === "triaged" || caseRecord.status === "drafted" ? (
           <form
             action={async (formData) => {
@@ -274,7 +337,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             style={{ borderColor: "var(--rule-strong)" }}
           >
             <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
-              Mark this application as filed to start the statutory clock.
+              Tell us the date you sent this, and we will start your thirty days.
             </p>
             <label className="block">
               <span className="block text-sm font-medium mb-1" style={{ color: "var(--ink)" }}>Date filed</span>
@@ -298,7 +361,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               className="border-2 px-5 py-2 font-body font-semibold"
               style={{ background: "var(--forest)", borderColor: "var(--ink)", color: "var(--paper)" }}
             >
-              Mark filed and start the clock
+              I have sent it. Start my thirty days.
             </SubmitButton>
           </form>
         ) : (
@@ -332,11 +395,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
             <details className="border p-4 text-sm" style={{ borderColor: "var(--rule)" }}>
               <summary className="cursor-pointer font-medium" style={{ color: "var(--ink)" }}>
-                Run the daily sweep manually (demo control)
+                Show me what happens if they miss the deadline
               </summary>
               <p className="mt-3 mb-3" style={{ color: "var(--ink-soft)" }}>
-                In production this runs once a day for every open case via Cloud Scheduler. For demonstration you
-                can trigger it here, optionally simulating a later date to show what happens once a deadline lapses.
+                Every day, Adhikaar checks every open filing for a deadline that has lapsed. If yours ever
+                does, your first appeal is drafted automatically, free of cost, the same day. You can see
+                that happen right now by simulating a later date below.
               </p>
               <form
                 action={async (formData) => {
@@ -351,11 +415,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                   <input type="date" name="simulateDate" className="border p-2 text-sm" style={{ borderColor: "var(--rule-strong)" }} />
                 </label>
                 <SubmitButton
-                  pendingLabel="Running…"
+                  pendingLabel="Checking…"
                   className="border-2 px-4 py-2 text-sm font-semibold"
                   style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
                 >
-                  Run sweep
+                  Check now
                 </SubmitButton>
               </form>
             </details>
@@ -375,7 +439,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       )}
 
       {/* PDF export */}
-      <Section title="Export">
+      <Section title="Download">
         <a
           href={`/api/cases/${caseRecord.id}/pdf`}
           className="border-2 px-6 py-3 font-body font-semibold inline-block"
@@ -386,7 +450,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             pointerEvents: caseRecord.questions.length && caseRecord.selectedAuthorityId ? "auto" : "none",
           }}
         >
-          Download the application as a PDF
+          Download your application
         </a>
         {(!caseRecord.questions.length || !caseRecord.selectedAuthorityId) && (
           <p className="text-sm mt-2" style={{ color: "var(--ink-faint)" }}>
@@ -396,7 +460,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       </Section>
 
       {/* Notes */}
-      <Section title="Operator notes">
+      <Section title="My notes">
         <form
           action={async (formData) => {
             "use server";

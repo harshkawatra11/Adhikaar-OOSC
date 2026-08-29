@@ -1,4 +1,4 @@
-export default function DocketLoading() {
+export default function MyFilingsLoading() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 animate-pulse">
       <div className="flex items-end justify-between mb-8">

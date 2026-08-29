@@ -46,8 +46,8 @@ export async function intakeAction(formData: FormData): Promise<void> {
     operatorNotes: "",
   });
 
-  revalidatePath("/docket");
-  redirect(`/docket/${record.id}`);
+  revalidatePath("/my");
+  redirect(`/my/${record.id}`);
 }
 
 export async function selectAuthorityAction(caseId: string, authorityId: string): Promise<void> {
@@ -62,7 +62,7 @@ export async function selectAuthorityAction(caseId: string, authorityId: string)
   });
 
   await updateCase(caseId, uid, { selectedAuthorityId: authorityId, jurisdiction });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function addQuestionAction(caseId: string, formData: FormData): Promise<void> {
@@ -79,7 +79,7 @@ export async function addQuestionAction(caseId: string, formData: FormData): Pro
     questions: [...current.questions, question],
     status: current.status === "triaged" ? "drafted" : current.status,
   });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function removeQuestionAction(caseId: string, questionId: string): Promise<void> {
@@ -89,7 +89,7 @@ export async function removeQuestionAction(caseId: string, questionId: string): 
   await updateCase(caseId, uid, {
     questions: current.questions.filter((q) => q.id !== questionId),
   });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function acceptRewriteAction(
@@ -111,7 +111,7 @@ export async function acceptRewriteAction(
   });
 
   await updateCase(caseId, uid, { questions });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function polishRewriteAction(
@@ -141,7 +141,7 @@ export async function polishRewriteAction(
           }
     );
     await updateCase(caseId, uid, { questions });
-    revalidatePath(`/docket/${caseId}`);
+    revalidatePath(`/my/${caseId}`);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error." };
@@ -158,7 +158,7 @@ export async function generatePlainLanguageCopyAction(
   try {
     const result = await generatePlainLanguageCopy(current);
     await updateCase(caseId, uid, { plainLanguageCopy: result });
-    revalidatePath(`/docket/${caseId}`);
+    revalidatePath(`/my/${caseId}`);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error." };
@@ -175,7 +175,7 @@ export async function markFiledAction(caseId: string, formData: FormData): Promi
   const deadlines = computeInitialDeadlines({ filedDate, lifeOrLiberty, viaApio });
 
   await updateCase(caseId, uid, { status: "awaiting_response", filedDate, deadlines });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function runSweepAction(caseId: string, simulateDate?: string): Promise<void> {
@@ -200,12 +200,12 @@ export async function runSweepAction(caseId: string, simulateDate?: string): Pro
   }
 
   await updateCase(caseId, uid, patch);
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }
 
 export async function updateNotesAction(caseId: string, formData: FormData): Promise<void> {
   const { uid } = await requireSession();
   const operatorNotes = String(formData.get("operatorNotes") ?? "");
   await updateCase(caseId, uid, { operatorNotes });
-  revalidatePath(`/docket/${caseId}`);
+  revalidatePath(`/my/${caseId}`);
 }

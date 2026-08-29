@@ -41,7 +41,7 @@ export function HeroAct() {
           <Reveal delay={0.15}>
             <div className="flex flex-wrap gap-4">
               <Link
-                href="/docket/new"
+                href="/start"
                 className="border-2 px-6 py-3 font-body font-semibold panel-lift transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
                 style={{ background: "var(--seal)", borderColor: "var(--ink)", color: "var(--paper)" }}
               >

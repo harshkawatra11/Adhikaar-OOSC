@@ -19,7 +19,7 @@ export function CloseAct() {
         </Reveal>
         <Reveal delay={0.1}>
           <Link
-            href="/docket/new"
+            href="/start"
             className="border-2 px-8 py-3 font-body font-semibold inline-block transition-transform hover:-translate-y-0.5"
             style={{ background: "var(--foil)", borderColor: "var(--foil)", color: "var(--paper-endpaper)" }}
           >
