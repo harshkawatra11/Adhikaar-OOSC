@@ -28,6 +28,9 @@
     "react-dom": "19.2.8",
     "zod": "^4.4.3"
   },
+  "overrides": {
+    "jose": "4.15.9"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
