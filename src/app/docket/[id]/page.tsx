@@ -16,6 +16,7 @@ import {
 } from "@/lib/actions";
 import { lookupStateFee, CENTRAL_FEE, BPL_EXEMPTION_NOTE } from "@/lib/data/state-fees";
 import { daysUntil, isOverdue } from "@/lib/deadlines";
+import { requireSession } from "@/lib/auth/session";
 import type { LintFinding } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +27,10 @@ const SEVERITY_COLOR: Record<LintFinding["severity"], string> = {
   info: "var(--forest)",
 };
 
-// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
-const TEMP_OWNER_UID = "seed-owner";
-
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const caseRecord = await getCase(id, TEMP_OWNER_UID);
+  const { uid } = await requireSession(`/docket/${id}`);
+  const caseRecord = await getCase(id, uid);
   if (!caseRecord) notFound();
 
   const j = caseRecord.jurisdiction;

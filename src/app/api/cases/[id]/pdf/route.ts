@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { getCase } from "@/lib/store";
 import { generateRtiPdf } from "@/lib/pdf/generate";
-
-// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
-const TEMP_OWNER_UID = "seed-owner";
+import { getSession } from "@/lib/auth/session";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Sign in to download this filing." }, { status: 401 });
+  }
+
   const { id } = await params;
-  const caseRecord = await getCase(id, TEMP_OWNER_UID);
+  const caseRecord = await getCase(id, session.uid);
   if (!caseRecord) {
     return NextResponse.json({ error: "Case not found" }, { status: 404 });
   }

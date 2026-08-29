@@ -2,15 +2,14 @@ import Link from "next/link";
 import { listCases } from "@/lib/store";
 import { StatusChip } from "@/components/StatusChip";
 import { daysUntil, isOverdue } from "@/lib/deadlines";
+import { requireSession } from "@/lib/auth/session";
 
 export const metadata = { title: "Docket | Adhikaar" };
 export const dynamic = "force-dynamic";
 
-// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
-const TEMP_OWNER_UID = "seed-owner";
-
 export default async function DocketPage() {
-  const cases = await listCases(TEMP_OWNER_UID);
+  const { uid } = await requireSession("/docket");
+  const cases = await listCases(uid);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">

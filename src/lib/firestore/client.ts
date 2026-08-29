@@ -30,13 +30,17 @@ export function isFirestoreConfigured(): boolean {
 let app: App | null = null;
 let db: Firestore | null = null;
 
-export function getFirestoreDb(): Firestore {
+/** The shared admin app singleton, used by both getFirestoreDb() below
+ *  and src/lib/auth/adminAuth.ts, which needs the same credential to
+ *  call admin.auth().verifyIdToken(). One initializeApp() call for the
+ *  whole server process, not one per feature. */
+export function getFirebaseAdminApp(): App {
   if (!isFirestoreConfigured()) {
     throw new Error(
-      "Firestore is not configured (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Falling back to the local file store."
+      "Firebase admin credentials are not configured (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)."
     );
   }
-  if (!db) {
+  if (!app) {
     if (!getApps().length) {
       app = initializeApp({
         credential: cert({
@@ -50,7 +54,18 @@ export function getFirestoreDb(): Firestore {
     } else {
       app = getApps()[0]!;
     }
-    db = getFirestore(app);
+  }
+  return app;
+}
+
+export function getFirestoreDb(): Firestore {
+  if (!isFirestoreConfigured()) {
+    throw new Error(
+      "Firestore is not configured (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Falling back to the local file store."
+    );
+  }
+  if (!db) {
+    db = getFirestore(getFirebaseAdminApp());
     // AuthorityCandidate.state and several other CaseRecord fields are
     // legitimately optional (a Union-jurisdiction authority has no
     // state), which JavaScript represents as `undefined`. The Firestore

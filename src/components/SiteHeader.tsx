@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Seal } from "@/components/Seal";
 import { GithubMark } from "@/components/GithubMark";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { getSession } from "@/lib/auth/session";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = await getSession();
+
   return (
     <header className="border-b-2" style={{ borderColor: "var(--ink)", background: "var(--paper)" }}>
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between gap-6">
@@ -27,6 +31,13 @@ export function SiteHeader() {
           <Link href="/methodology" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
             Methodology
           </Link>
+          {session ? (
+            <SignOutButton />
+          ) : (
+            <Link href="/login" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
+              Sign in
+            </Link>
+          )}
           <a
             href="https://github.com/harshkawatra11/Adhikaar-OOSC"
             className="github-btn border-2 flex items-center gap-2 px-3 py-1.5 font-body text-sm font-semibold transition-colors"

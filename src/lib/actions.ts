@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createCase, getCase, updateCase } from "@/lib/store";
+import { requireSession } from "@/lib/auth/session";
 import { runJurisdictionTriage } from "@/lib/jurisdiction";
 import { runRemedyTriage } from "@/lib/remedy";
 import { lintQuestion } from "@/lib/linter/rules";
@@ -13,14 +14,9 @@ import { polishRewrite } from "@/lib/gemini/rewritePolish";
 import type { CaseRecord, DraftQuestion } from "@/lib/types";
 import { randomUUID } from "crypto";
 
-// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
-// Every "TEMP_OWNER_UID" reference below is deliberate and temporary:
-// it keeps the app in a single-tenant-equivalent state until real
-// sessions exist, without leaving any store call unscoped in the
-// meantime, since WP1 removed the no-owner code path entirely.
-const TEMP_OWNER_UID = "seed-owner";
-
 export async function intakeAction(formData: FormData): Promise<void> {
+  const { uid } = await requireSession();
+
   const grievanceRaw = String(formData.get("grievance") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
@@ -37,7 +33,7 @@ export async function intakeAction(formData: FormData): Promise<void> {
   const remedy = runRemedyTriage(grievanceRaw);
 
   const record = await createCase({
-    ownerUid: TEMP_OWNER_UID,
+    ownerUid: uid,
     status: "triaged",
     applicant: { name, address, isBpl, preferredLanguage },
     grievanceSummary: grievanceRaw.slice(0, 220),
@@ -55,7 +51,8 @@ export async function intakeAction(formData: FormData): Promise<void> {
 }
 
 export async function selectAuthorityAction(caseId: string, authorityId: string): Promise<void> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return;
 
   const jurisdiction = runJurisdictionTriage({
@@ -64,20 +61,21 @@ export async function selectAuthorityAction(caseId: string, authorityId: string)
     selectedAuthorityId: authorityId,
   });
 
-  await updateCase(caseId, TEMP_OWNER_UID, { selectedAuthorityId: authorityId, jurisdiction });
+  await updateCase(caseId, uid, { selectedAuthorityId: authorityId, jurisdiction });
   revalidatePath(`/docket/${caseId}`);
 }
 
 export async function addQuestionAction(caseId: string, formData: FormData): Promise<void> {
+  const { uid } = await requireSession();
   const text = String(formData.get("question") ?? "").trim();
   if (!text) return;
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const current = await getCase(caseId, uid);
   if (!current) return;
 
   const findings = lintQuestion(text);
   const question: DraftQuestion = { id: randomUUID(), text, findings };
 
-  await updateCase(caseId, TEMP_OWNER_UID, {
+  await updateCase(caseId, uid, {
     questions: [...current.questions, question],
     status: current.status === "triaged" ? "drafted" : current.status,
   });
@@ -85,9 +83,10 @@ export async function addQuestionAction(caseId: string, formData: FormData): Pro
 }
 
 export async function removeQuestionAction(caseId: string, questionId: string): Promise<void> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return;
-  await updateCase(caseId, TEMP_OWNER_UID, {
+  await updateCase(caseId, uid, {
     questions: current.questions.filter((q) => q.id !== questionId),
   });
   revalidatePath(`/docket/${caseId}`);
@@ -98,7 +97,8 @@ export async function acceptRewriteAction(
   questionId: string,
   variant: "mechanical" | "ai" = "mechanical"
 ): Promise<void> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return;
 
   const questions = current.questions.map((q) => {
@@ -110,7 +110,7 @@ export async function acceptRewriteAction(
     return { ...q, originalText: q.originalText ?? q.text, text: rewrite, findings: newFindings };
   });
 
-  await updateCase(caseId, TEMP_OWNER_UID, { questions });
+  await updateCase(caseId, uid, { questions });
   revalidatePath(`/docket/${caseId}`);
 }
 
@@ -118,7 +118,8 @@ export async function polishRewriteAction(
   caseId: string,
   questionId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return { ok: false, error: "Case not found." };
 
   const question = current.questions.find((q) => q.id === questionId);
@@ -139,7 +140,7 @@ export async function polishRewriteAction(
             ),
           }
     );
-    await updateCase(caseId, TEMP_OWNER_UID, { questions });
+    await updateCase(caseId, uid, { questions });
     revalidatePath(`/docket/${caseId}`);
     return { ok: true };
   } catch (e) {
@@ -150,12 +151,13 @@ export async function polishRewriteAction(
 export async function generatePlainLanguageCopyAction(
   caseId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return { ok: false, error: "Case not found." };
 
   try {
     const result = await generatePlainLanguageCopy(current);
-    await updateCase(caseId, TEMP_OWNER_UID, { plainLanguageCopy: result });
+    await updateCase(caseId, uid, { plainLanguageCopy: result });
     revalidatePath(`/docket/${caseId}`);
     return { ok: true };
   } catch (e) {
@@ -164,6 +166,7 @@ export async function generatePlainLanguageCopyAction(
 }
 
 export async function markFiledAction(caseId: string, formData: FormData): Promise<void> {
+  const { uid } = await requireSession();
   const filedDate = String(formData.get("filedDate") ?? "").trim();
   const lifeOrLiberty = formData.get("lifeOrLiberty") === "on";
   const viaApio = formData.get("viaApio") === "on";
@@ -171,12 +174,13 @@ export async function markFiledAction(caseId: string, formData: FormData): Promi
 
   const deadlines = computeInitialDeadlines({ filedDate, lifeOrLiberty, viaApio });
 
-  await updateCase(caseId, TEMP_OWNER_UID, { status: "awaiting_response", filedDate, deadlines });
+  await updateCase(caseId, uid, { status: "awaiting_response", filedDate, deadlines });
   revalidatePath(`/docket/${caseId}`);
 }
 
 export async function runSweepAction(caseId: string, simulateDate?: string): Promise<void> {
-  const current = await getCase(caseId, TEMP_OWNER_UID);
+  const { uid } = await requireSession();
+  const current = await getCase(caseId, uid);
   if (!current) return;
 
   const now = simulateDate ? new Date(simulateDate) : new Date();
@@ -195,12 +199,13 @@ export async function runSweepAction(caseId: string, simulateDate?: string): Pro
     patch.operatorNotes = `${current.operatorNotes}\n\n--- Auto-drafted first appeal (${new Date().toISOString().slice(0, 10)}) ---\n${result.firstAppealDraft}`.trim();
   }
 
-  await updateCase(caseId, TEMP_OWNER_UID, patch);
+  await updateCase(caseId, uid, patch);
   revalidatePath(`/docket/${caseId}`);
 }
 
 export async function updateNotesAction(caseId: string, formData: FormData): Promise<void> {
+  const { uid } = await requireSession();
   const operatorNotes = String(formData.get("operatorNotes") ?? "");
-  await updateCase(caseId, TEMP_OWNER_UID, { operatorNotes });
+  await updateCase(caseId, uid, { operatorNotes });
   revalidatePath(`/docket/${caseId}`);
 }

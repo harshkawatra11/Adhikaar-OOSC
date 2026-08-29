@@ -201,9 +201,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// TODO(WP9): replaced by DEMO_UID from the environment when the seed
-// script is rewritten to target the real demo account.
-const TEMP_OWNER_UID = "seed-owner";
+// The demo account's uid, created via the Identity Toolkit
+// accounts:signUp endpoint (see .env.example's DEMO_UID comment).
+// Seeding under this uid, rather than a placeholder, is what makes the
+// "Enter as a demo citizen" login on /login show real data; WP9 still
+// owns the fuller rewrite of the scenario set itself.
+if (!process.env.DEMO_UID) {
+  console.error("DEMO_UID is not set. Create the demo account once (see .env.example) and set its uid here.");
+  process.exit(1);
+}
+const TEMP_OWNER_UID: string = process.env.DEMO_UID;
 
 async function purgeExisting(): Promise<void> {
   const existing = await store.listCases(TEMP_OWNER_UID);
