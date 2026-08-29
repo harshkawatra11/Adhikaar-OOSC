@@ -58,6 +58,14 @@ interface Scenario {
   acceptFirstRewrite?: boolean;
   filedDate?: string;
   simulateSweepDate?: string;
+  /**
+   * Force the authority selection to this id instead of the top-ranked
+   * candidate. Exists for exactly one purpose: to demonstrate the
+   * jurisdiction engine's blockingWarning by walking a State-subject
+   * grievance through selecting a wrong, Central authority for it, the
+   * way an operator who ignores the ranked suggestions actually could.
+   */
+  overrideAuthorityId?: string;
 }
 
 const SCENARIOS: Scenario[] = [
@@ -73,7 +81,10 @@ const SCENARIOS: Scenario[] = [
     questions: [
       "Please provide a certified copy of the 7/12 extract and mutation register entry for khasra number 88, Nashik taluka, for the period 2020 to 2024.",
     ],
-    filedDate: daysAgo(9),
+    // Filed 8 days ago against a 30-day section 7(1) clock leaves ~22
+    // days on the countdown: a live, reassuring deadline card, not one
+    // that reads as either brand new or nearly overdue.
+    filedDate: daysAgo(8),
   },
   {
     name: "Mohammed Aslam",
@@ -169,8 +180,32 @@ const SCENARIOS: Scenario[] = [
     isBpl: false,
     preferredLanguage: "English",
     grievanceRaw:
-      "I bought a washing machine online that arrived defective, and the seller is refusing to refund me despite the product being under warranty.",
+      "I bought a washing machine online for Rs 38,000 that arrived defective, and the seller is refusing to refund me despite the product being under warranty.",
     stage: "triaged",
+  },
+  {
+    // Deliberately walks a State-subject (land) grievance through
+    // selecting the Department of Land Resources, a Central authority,
+    // instead of the correctly-ranked Maharashtra Revenue Department
+    // candidate. This is the one scenario in the docket that exists to
+    // show the jurisdiction engine's blockingWarning actually firing
+    // (src/lib/jurisdiction.ts, the selectedAuthorityId branch): the
+    // single most important thing this tool demonstrates is catching a
+    // wrong-authority filing before it goes out and gets returned
+    // without a refund. Left at "drafted", not "filed", since the whole
+    // point is that this gets caught before filing.
+    name: "Suresh Patil",
+    address: "14 Shivaji Nagar, Pune, Maharashtra",
+    state: "Maharashtra",
+    isBpl: false,
+    preferredLanguage: "Marathi",
+    grievanceRaw:
+      "I want a copy of the 7/12 extract and mutation register entry for my agricultural land in Haveli taluka, Pune, khasra number 231. I went to the tehsildar's office twice and they keep telling me to come back later without giving any reason.",
+    stage: "drafted",
+    questions: [
+      "Please provide a certified copy of the 7/12 extract and mutation register entry for khasra number 231, Haveli taluka, Pune district, for the last five years.",
+    ],
+    overrideAuthorityId: "dolr",
   },
   {
     name: "Vikram Singh",
@@ -251,19 +286,27 @@ async function buildScenario(s: Scenario): Promise<void> {
   }
 
   // Select the top authority candidate, same as an operator clicking the
-  // first radio button and confirming.
+  // first radio button and confirming, unless the scenario deliberately
+  // overrides that (see overrideAuthorityId) to exercise the wrong-
+  // authority blockingWarning path instead.
   const topCandidate = jurisdiction.candidates[0];
-  if (topCandidate) {
+  const authorityIdToSelect = s.overrideAuthorityId ?? topCandidate?.authorityId;
+  if (authorityIdToSelect) {
     const reJurisdiction = runJurisdictionTriage({
       grievanceText: s.grievanceRaw,
-      state: topCandidate.state,
-      selectedAuthorityId: topCandidate.authorityId,
+      state: s.state || topCandidate?.state,
+      selectedAuthorityId: authorityIdToSelect,
     });
     record = (await store.updateCase(record.id, TEMP_OWNER_UID, {
-      selectedAuthorityId: topCandidate.authorityId,
+      selectedAuthorityId: authorityIdToSelect,
       jurisdiction: reJurisdiction,
     }))!;
     await sleep(WRITE_PACE_MS);
+    if (reJurisdiction.blockingWarning) {
+      console.log(
+        `  ${s.name}: blockingWarning fired on authority "${authorityIdToSelect}" (${reJurisdiction.blockingWarning.citationId})`
+      );
+    }
   }
 
   const questions: DraftQuestion[] = [];
