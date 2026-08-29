@@ -26,9 +26,12 @@ const SEVERITY_COLOR: Record<LintFinding["severity"], string> = {
   info: "var(--forest)",
 };
 
+// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
+const TEMP_OWNER_UID = "seed-owner";
+
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const caseRecord = await getCase(id);
+  const caseRecord = await getCase(id, TEMP_OWNER_UID);
   if (!caseRecord) notFound();
 
   const j = caseRecord.jurisdiction;

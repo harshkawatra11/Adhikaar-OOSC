@@ -119,6 +119,11 @@ export interface CaseRecord {
   updatedAt: string;
   status: CaseStatus;
 
+  /** Firebase Auth uid of the citizen who owns this filing. Every store
+   *  method takes this and compares it, so a caller that forgets cannot
+   *  leak another citizen's grievance text. */
+  ownerUid: string;
+
   applicant: Applicant;
   grievanceSummary: string;
   grievanceRaw: string;

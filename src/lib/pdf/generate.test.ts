@@ -7,6 +7,7 @@ const sample: CaseRecord = {
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   status: "drafted",
+  ownerUid: "test-owner",
   applicant: { name: "Rekha Deshmukh", address: "Ward 12, Nagpur, Maharashtra", isBpl: false, preferredLanguage: "Marathi" },
   grievanceSummary: "Land record request",
   grievanceRaw: "Land record request",

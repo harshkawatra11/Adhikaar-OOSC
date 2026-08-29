@@ -11,6 +11,9 @@
 // different instances. That is why Firestore (see firestoreStore.ts) is
 // the real production path; this file exists so the product runs with
 // no cloud account at all.
+//
+// Ownership mirrors firestoreStore.ts exactly: every read and write is
+// scoped to ownerUid, checked here rather than trusted from the caller.
 
 import { promises as fs } from "fs";
 import os from "os";
@@ -49,14 +52,18 @@ async function writeAll(cases: CaseRecord[]): Promise<void> {
 }
 
 export const fileStore: CaseStore = {
-  async listCases() {
+  async listCases(ownerUid) {
     const cases = await readAll();
-    return cases.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return cases
+      .filter((c) => c.ownerUid === ownerUid)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
 
-  async getCase(id) {
+  async getCase(id, ownerUid) {
     const cases = await readAll();
-    return cases.find((c) => c.id === id);
+    const found = cases.find((c) => c.id === id);
+    if (!found || found.ownerUid !== ownerUid) return undefined;
+    return found;
   },
 
   async createCase(partial) {
@@ -73,10 +80,11 @@ export const fileStore: CaseStore = {
     return record;
   },
 
-  async updateCase(id, patch) {
+  async updateCase(id, ownerUid, patch) {
     const cases = await readAll();
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return undefined;
+    if (cases[idx].ownerUid !== ownerUid) return undefined;
     cases[idx] = {
       ...cases[idx],
       ...patch,
@@ -86,10 +94,19 @@ export const fileStore: CaseStore = {
     return cases[idx];
   },
 
-  async deleteCase(id) {
+  async deleteCase(id, ownerUid) {
     const cases = await readAll();
+    const found = cases.find((c) => c.id === id);
+    if (!found || found.ownerUid !== ownerUid) return false;
     const next = cases.filter((c) => c.id !== id);
     await writeAll(next);
     return next.length !== cases.length;
+  },
+
+  async listAllOpenCases() {
+    const cases = await readAll();
+    return cases.filter(
+      (c) => c.status === "awaiting_response" || c.status === "first_appeal_filed"
+    );
   },
 };

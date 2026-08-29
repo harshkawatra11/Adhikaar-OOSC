@@ -34,6 +34,7 @@ describe("Gemini client, without a configured key", () => {
         createdAt: "",
         updatedAt: "",
         status: "drafted",
+        ownerUid: "test-owner",
         applicant: { name: "x", address: "x", isBpl: false, preferredLanguage: "Hindi" },
         grievanceSummary: "x",
         grievanceRaw: "x",

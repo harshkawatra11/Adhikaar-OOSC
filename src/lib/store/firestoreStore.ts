@@ -8,6 +8,14 @@
 // backstop described in rateLimit.ts. It is a supplement to, not a
 // substitute for, the Firestore free-tier ceiling and the GCP billing
 // budget alert that are the actual cost controls for this project.
+//
+// Ownership: every read and write is scoped to ownerUid, checked inside
+// this file rather than trusted from the caller. listCases deliberately
+// does NOT chain .orderBy() onto the ownerUid where() clause: Firestore
+// requires a composite index for that combination, which fails at
+// runtime with an index-creation link rather than at build time, and
+// case counts per citizen are small enough that sorting in memory is
+// the correct choice here, not a shortcut.
 
 import { randomUUID } from "crypto";
 import { getFirestoreDb } from "@/lib/firestore/client";
@@ -18,16 +26,21 @@ import type { CaseStore } from "@/lib/store/types";
 const COLLECTION = "cases";
 
 export const firestoreStore: CaseStore = {
-  async listCases() {
+  async listCases(ownerUid) {
     const db = getFirestoreDb();
-    const snapshot = await db.collection(COLLECTION).orderBy("updatedAt", "desc").get();
-    return snapshot.docs.map((d) => d.data() as CaseRecord);
+    const snapshot = await db.collection(COLLECTION).where("ownerUid", "==", ownerUid).get();
+    return snapshot.docs
+      .map((d) => d.data() as CaseRecord)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
 
-  async getCase(id) {
+  async getCase(id, ownerUid) {
     const db = getFirestoreDb();
     const doc = await db.collection(COLLECTION).doc(id).get();
-    return doc.exists ? (doc.data() as CaseRecord) : undefined;
+    if (!doc.exists) return undefined;
+    const data = doc.data() as CaseRecord;
+    if (data.ownerUid !== ownerUid) return undefined;
+    return data;
   },
 
   async createCase(partial) {
@@ -44,14 +57,16 @@ export const firestoreStore: CaseStore = {
     return record;
   },
 
-  async updateCase(id, patch) {
+  async updateCase(id, ownerUid, patch) {
     assertWriteAllowed();
     const db = getFirestoreDb();
     const ref = db.collection(COLLECTION).doc(id);
     const existing = await ref.get();
     if (!existing.exists) return undefined;
+    const existingData = existing.data() as CaseRecord;
+    if (existingData.ownerUid !== ownerUid) return undefined;
     const updated: CaseRecord = {
-      ...(existing.data() as CaseRecord),
+      ...existingData,
       ...patch,
       updatedAt: new Date().toISOString(),
     };
@@ -59,13 +74,24 @@ export const firestoreStore: CaseStore = {
     return updated;
   },
 
-  async deleteCase(id) {
+  async deleteCase(id, ownerUid) {
     assertWriteAllowed();
     const db = getFirestoreDb();
     const ref = db.collection(COLLECTION).doc(id);
     const existing = await ref.get();
     if (!existing.exists) return false;
+    const existingData = existing.data() as CaseRecord;
+    if (existingData.ownerUid !== ownerUid) return false;
     await ref.delete();
     return true;
+  },
+
+  async listAllOpenCases() {
+    const db = getFirestoreDb();
+    const snapshot = await db
+      .collection(COLLECTION)
+      .where("status", "in", ["awaiting_response", "first_appeal_filed"])
+      .get();
+    return snapshot.docs.map((d) => d.data() as CaseRecord);
   },
 };

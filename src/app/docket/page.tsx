@@ -6,8 +6,11 @@ import { daysUntil, isOverdue } from "@/lib/deadlines";
 export const metadata = { title: "Docket | Adhikaar" };
 export const dynamic = "force-dynamic";
 
+// TODO(WP2): replaced by requireSession() once Firebase Auth lands.
+const TEMP_OWNER_UID = "seed-owner";
+
 export default async function DocketPage() {
-  const cases = await listCases();
+  const cases = await listCases(TEMP_OWNER_UID);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">

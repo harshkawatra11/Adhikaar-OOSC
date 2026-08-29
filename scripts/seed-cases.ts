@@ -201,11 +201,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// TODO(WP9): replaced by DEMO_UID from the environment when the seed
+// script is rewritten to target the real demo account.
+const TEMP_OWNER_UID = "seed-owner";
+
 async function purgeExisting(): Promise<void> {
-  const existing = await store.listCases();
+  const existing = await store.listCases(TEMP_OWNER_UID);
   console.log(`Purging ${existing.length} existing case(s)...`);
   for (const c of existing) {
-    await store.deleteCase(c.id);
+    await store.deleteCase(c.id, TEMP_OWNER_UID);
     await sleep(WRITE_PACE_MS);
   }
 }
@@ -220,6 +224,7 @@ async function buildScenario(s: Scenario): Promise<void> {
   const remedy = runRemedyTriage(s.grievanceRaw);
 
   let record: CaseRecord = await store.createCase({
+    ownerUid: TEMP_OWNER_UID,
     status: "triaged",
     applicant: { name: s.name, address: s.address, isBpl: s.isBpl, preferredLanguage: s.preferredLanguage },
     grievanceSummary: s.grievanceRaw.slice(0, 220),
@@ -247,7 +252,7 @@ async function buildScenario(s: Scenario): Promise<void> {
       state: topCandidate.state,
       selectedAuthorityId: topCandidate.authorityId,
     });
-    record = (await store.updateCase(record.id, {
+    record = (await store.updateCase(record.id, TEMP_OWNER_UID, {
       selectedAuthorityId: topCandidate.authorityId,
       jurisdiction: reJurisdiction,
     }))!;
@@ -263,7 +268,7 @@ async function buildScenario(s: Scenario): Promise<void> {
     questions.push(q);
   }
   if (questions.length) {
-    record = (await store.updateCase(record.id, {
+    record = (await store.updateCase(record.id, TEMP_OWNER_UID, {
       questions,
       status: record.status === "triaged" ? "drafted" : record.status,
     }))!;
@@ -277,7 +282,7 @@ async function buildScenario(s: Scenario): Promise<void> {
 
   if (s.filedDate) {
     const deadlines = computeInitialDeadlines({ filedDate: s.filedDate, lifeOrLiberty: false, viaApio: false });
-    record = (await store.updateCase(record.id, { status: "awaiting_response", filedDate: s.filedDate, deadlines }))!;
+    record = (await store.updateCase(record.id, TEMP_OWNER_UID, { status: "awaiting_response", filedDate: s.filedDate, deadlines }))!;
     await sleep(WRITE_PACE_MS);
   }
 
@@ -300,7 +305,7 @@ async function buildScenario(s: Scenario): Promise<void> {
       if (result.firstAppealDraft) {
         patch.operatorNotes = `Auto-drafted first appeal (${new Date().toISOString().slice(0, 10)})\n\n${result.firstAppealDraft}`;
       }
-      record = (await store.updateCase(record.id, patch))!;
+      record = (await store.updateCase(record.id, TEMP_OWNER_UID, patch))!;
       await sleep(WRITE_PACE_MS);
     }
     console.log(`  ${s.name}: swept -> status ${record.status}`);
@@ -313,7 +318,7 @@ async function main() {
   for (const s of SCENARIOS) {
     await buildScenario(s);
   }
-  const final = await store.listCases();
+  const final = await store.listCases(TEMP_OWNER_UID);
   console.log(`Done. Docket now has ${final.length} case(s).`);
 }
 

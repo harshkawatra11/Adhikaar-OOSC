@@ -9,6 +9,7 @@ function baseCase(overrides: Partial<CaseRecord> = {}): CaseRecord {
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     status: "awaiting_response",
+    ownerUid: "test-owner",
     applicant: { name: "Test Applicant", address: "Test Address", isBpl: false, preferredLanguage: "English" },
     grievanceSummary: "Test grievance",
     grievanceRaw: "Test grievance about land records",
