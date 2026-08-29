@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { evaluateAllSchemes, type SchemeResult } from "@/lib/schemes/evaluate";
 import { getScheme, type CitizenProfile, type OccupationCategory, type RationCardType } from "@/lib/data/schemes";
+import type { Lang } from "@/lib/i18n/dictionary";
 
 const OCCUPATIONS: { value: OccupationCategory; labelEn: string }[] = [
   { value: "farmer", labelEn: "Farmer / cultivates land" },
@@ -35,7 +36,12 @@ const VERDICT_COLOR: Record<SchemeResult["verdict"], string> = {
   more_information_needed: "var(--gilt)",
 };
 
-export function EligibilityWizard() {
+// TODO: full Hindi translation of this component's own strings
+// (labels, buttons) is still pending; `lang` is threaded through now
+// so the page-level wiring is correct and callers do not need to
+// change again once that pass lands. Interim state under time
+// pressure: accepted and currently unused past voice dictation.
+export function EligibilityWizard({ lang = "en" }: { lang?: Lang }) {
   const router = useRouter();
   const [profile, setProfile] = useState<CitizenProfile>({});
   const [results, setResults] = useState<SchemeResult[] | null>(null);
@@ -57,7 +63,7 @@ export function EligibilityWizard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-lang={lang}>
       <div className="border p-5 space-y-5" style={{ borderColor: "var(--rule-strong)" }}>
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block">

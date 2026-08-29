@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/auth/session";
+import { getLang } from "@/lib/i18n";
 import { Interview } from "@/components/interview/Interview";
 
 export const metadata = { title: "Start a filing | Adhikaar" };
@@ -14,11 +15,11 @@ export default async function StartPage({
   // clicked "Get the record you will need" loses it at the sign-in
   // wall and has to retype what they already wrote once.
   const returnPath = problem ? `/start?problem=${encodeURIComponent(problem)}` : "/start";
-  await requireSession(returnPath);
+  const [, lang] = await Promise.all([requireSession(returnPath), getLang()]);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
-      <Interview initialProblem={problem} />
+      <Interview initialProblem={problem} lang={lang} />
     </div>
   );
 }

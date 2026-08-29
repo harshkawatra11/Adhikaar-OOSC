@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Seal } from "@/components/Seal";
 import { GithubMark } from "@/components/GithubMark";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { getSession } from "@/lib/auth/session";
+import { getLang, t } from "@/lib/i18n";
 
 export async function SiteHeader() {
-  const session = await getSession();
+  const [session, lang] = await Promise.all([getSession(), getLang()]);
 
   return (
     <header className="border-b-2" style={{ borderColor: "var(--ink)", background: "var(--paper)" }}>
@@ -23,27 +25,28 @@ export async function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-6 font-body text-sm">
           <Link href="/my" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            My filings
+            {t(lang, "nav.myFilings")}
           </Link>
           <Link href="/start" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            Start a new filing
+            {t(lang, "nav.startFiling")}
           </Link>
           <Link href="/rights" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            Rights Navigator
+            {t(lang, "nav.rightsNavigator")}
           </Link>
           <Link href="/schemes" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            Scheme Eligibility
+            {t(lang, "nav.schemeEligibility")}
           </Link>
           <Link href="/methodology" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-            Methodology
+            {t(lang, "nav.methodology")}
           </Link>
           {session ? (
-            <SignOutButton />
+            <SignOutButton label={t(lang, "nav.signOut")} pendingLabel={t(lang, "nav.signingOut")} />
           ) : (
             <Link href="/login" className="hover:underline" style={{ color: "var(--ink-soft)" }}>
-              Sign in
+              {t(lang, "nav.signIn")}
             </Link>
           )}
+          <LanguageToggle current={lang} />
           <a
             href="https://github.com/harshkawatra11/Adhikaar-OOSC"
             className="github-btn border-2 flex items-center gap-2 px-3 py-1.5 font-body text-sm font-semibold transition-colors"

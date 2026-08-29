@@ -35,13 +35,19 @@ const LANGUAGES = [
 export function VoiceDictationButton({
   onTranscript,
   className,
+  defaultLang = "en-IN",
 }: {
   onTranscript: (text: string) => void;
   className?: string;
+  /** Starting language for the EN/HI toggle below, e.g. set to the
+   *  page's own language so a citizen in the Hindi interface does not
+   *  have to switch the dictation language separately. Still fully
+   *  user-overridable via the toggle itself. */
+  defaultLang?: (typeof LANGUAGES)[number]["code"];
 }) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
-  const [lang, setLang] = useState<(typeof LANGUAGES)[number]["code"]>("en-IN");
+  const [lang, setLang] = useState<(typeof LANGUAGES)[number]["code"]>(defaultLang);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 

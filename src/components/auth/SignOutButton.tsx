@@ -4,7 +4,13 @@ import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseClientConfigured } from "@/lib/auth/firebaseClient";
 
-export function SignOutButton() {
+export function SignOutButton({
+  label = "Sign out",
+  pendingLabel = "Signing out…",
+}: {
+  label?: string;
+  pendingLabel?: string;
+}) {
   const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
@@ -32,7 +38,7 @@ export function SignOutButton() {
       className="hover:underline disabled:opacity-50"
       style={{ color: "var(--ink-soft)" }}
     >
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }

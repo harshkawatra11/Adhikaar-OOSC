@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { VoiceDictationButton } from "@/components/VoiceDictationButton";
 import { CitationTag } from "@/components/CitationTag";
 import { askRightsAction } from "@/lib/rights/actions";
+import { t, type Lang } from "@/lib/i18n/dictionary";
 import type { RightsAnswer } from "@/lib/rights/answer";
 
-export function RightsAsk() {
+export function RightsAsk({ lang }: { lang: Lang }) {
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<RightsAnswer | null>(null);
@@ -37,15 +38,18 @@ export function RightsAsk() {
       <div className="border p-5" style={{ borderColor: "var(--rule-strong)" }}>
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium" style={{ color: "var(--ink)" }}>
-            Ask about a right, in your own words
+            {t(lang, "rights.askLabel")}
           </p>
-          <VoiceDictationButton onTranscript={(t) => setQuestion((prev) => (prev ? prev + " " + t : t))} />
+          <VoiceDictationButton
+            defaultLang={lang === "hi" ? "hi-IN" : "en-IN"}
+            onTranscript={(text) => setQuestion((prev) => (prev ? prev + " " + text : text))}
+          />
         </div>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           rows={3}
-          placeholder="For example: my landlord is refusing to return my security deposit after I vacated the flat."
+          placeholder={t(lang, "rights.placeholder")}
           className="w-full border p-3 mb-3"
           style={{ borderColor: "var(--rule-strong)", background: "var(--paper)", color: "var(--ink)" }}
         />
@@ -56,22 +60,21 @@ export function RightsAsk() {
           className="border-2 px-6 py-3 font-body font-semibold disabled:opacity-40"
           style={{ background: "var(--seal)", borderColor: "var(--ink)", color: "var(--paper)" }}
         >
-          {pending ? "Checking the corpus…" : "Ask"}
+          {pending ? t(lang, "rights.checking") : t(lang, "rights.ask")}
         </button>
       </div>
 
       {answer && answer.status === "no_source" && (
         <div className="border-2 p-6" style={{ borderColor: "var(--gilt)", background: "var(--gilt-tint)" }}>
           <p className="font-mono text-xs uppercase tracking-wide mb-2" style={{ color: "var(--gilt)" }}>
-            No source for this
+            {t(lang, "rights.noSourceTitle")}
           </p>
           <p className="mb-3" style={{ color: "var(--ink)" }}>
-            We could not find a statute in our corpus that speaks to this question with enough
-            confidence to answer. Rather than guess, we are saying so.
+            {t(lang, "rights.noSourceBody")}
           </p>
-          <p className="text-sm mb-2" style={{ color: "var(--ink-soft)" }}>What we do cover:</p>
+          <p className="text-sm mb-2" style={{ color: "var(--ink-soft)" }}>{t(lang, "rights.whatWeCover")}</p>
           <ul className="text-sm list-disc list-inside space-y-1" style={{ color: "var(--ink-soft)" }}>
-            {answer.coveredTopics.map((t) => <li key={t}>{t}</li>)}
+            {answer.coveredTopics.map((topic) => <li key={topic}>{topic}</li>)}
           </ul>
         </div>
       )}
@@ -81,7 +84,7 @@ export function RightsAsk() {
           {answer.plainLanguage && (
             <div className="border-2 p-5" style={{ borderColor: "var(--forest)", background: "var(--forest-tint)" }}>
               <p className="font-mono text-xs uppercase tracking-wide mb-2" style={{ color: "var(--forest)" }}>
-                In plain language
+                {t(lang, "rights.inPlainLanguage")}
               </p>
               <p style={{ color: "var(--ink)" }}>{answer.plainLanguage.text}</p>
             </div>
@@ -91,7 +94,7 @@ export function RightsAsk() {
             {answer.chunks.map((chunk) => (
               <div key={chunk.id} className="border p-4" style={{ borderColor: "var(--rule-strong)" }}>
                 <p className="font-mono text-xs mb-1" style={{ color: "var(--seal-deep)" }}>
-                  {chunk.act}, {chunk.section} <CitationTag citationId={chunk.id} label="Read the text" />
+                  {chunk.act}, {chunk.section} <CitationTag citationId={chunk.id} label={t(lang, "rights.readTheText")} />
                 </p>
                 <p className="font-medium mb-2" style={{ color: "var(--ink)" }}>{chunk.heading}</p>
                 {chunk.note && (
@@ -102,8 +105,7 @@ export function RightsAsk() {
           </div>
 
           <p className="text-xs leading-relaxed" style={{ color: "var(--ink-faint)" }}>
-            This explains what the law says. It is not advice about your specific situation, and
-            for that you need a lawyer or a legal aid clinic.
+            {t(lang, "rights.boundaryLine")}
           </p>
 
           <button
@@ -112,7 +114,7 @@ export function RightsAsk() {
             className="border-2 px-6 py-3 font-body font-semibold"
             style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
           >
-            Get the record you will need
+            {t(lang, "rights.getTheRecord")}
           </button>
         </div>
       )}

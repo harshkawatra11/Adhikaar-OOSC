@@ -4,7 +4,7 @@
 
 *One citizen, one continuous journey: am I eligible, what are my rights, is this the right government, can I produce the document.*
 
-[![Live App](https://img.shields.io/badge/Live_App-adhikaaroosc.vercel.app-7c2415?style=for-the-badge&logo=vercel&logoColor=white)](https://adhikaaroosc.vercel.app)
+[![Live App](https://img.shields.io/badge/Live_App-adhikaar-app.vercel.app-7c2415?style=for-the-badge&logo=vercel&logoColor=white)](https://adhikaar-app.vercel.app)
 [![Tests](https://img.shields.io/badge/tests-164_passing-3d5940?style=for-the-badge&logo=vitest&logoColor=white)](#-testing-and-evaluation)
 [![License](https://img.shields.io/badge/license-Apache_2.0-93691f?style=for-the-badge)](LICENSE)
 
@@ -35,7 +35,7 @@ That register belongs to a central land department, and land is almost entirely 
 
 > Everyone else writes the application. Adhikaar decides whether the authority you have chosen can lawfully answer it, before a document is produced, then runs the statutory clock and drafts the appeal the day the authority misses it.
 
-Full sourcing, the national context figures, and the honesty caveat around the register live on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page inside the running app.
+Full sourcing, the national context figures, and the honesty caveat around the register live on the [Methodology](https://adhikaar-app.vercel.app/methodology) page inside the running app.
 
 The Government of India's own [RTI Online Portal](https://rtionline.gov.in) already exists, and it is real: working payment rails (net banking, UPI, cards), a BPL fee exemption, SMS status alerts, a published help desk. What it leaves a citizen holding is what Adhikaar is built to fix: no real account (its own FAQ says registration is optional, a case is tracked only by a registration number plus a typed email, and it states it retains RTI cases for three years), no help finding the right government (it covers Central authorities only, and says so, but does not ask what happened and work out who is responsible; addressed to the wrong government under a real 2008 Office Memorandum, an application is returned, not forwarded, no refund), one 3,000-character box with no drafting help, and total silence after submission, nothing tracks the statutory thirty-day clock or the deemed-refusal appeal window.
 
@@ -265,7 +265,7 @@ Set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` fr
 
 ## &#127760; Deployed on Vercel
 
-**Live at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app)**, backed by a real Firestore database, verified with an independent `curl` request that fetched a case from a different serverless instance than the one that created it. `src/lib/store.ts` selects Firestore automatically once the three `FIREBASE_*` variables are present as encrypted Vercel project environment variables, which is how the live deployment runs; local development uses the file fallback by default. The Firebase Auth, session, demo-login and cron variables listed above are set the same way, as encrypted Vercel project environment variables.
+**Live at [adhikaar-app.vercel.app](https://adhikaar-app.vercel.app)**, backed by a real Firestore database, verified with an independent `curl` request that fetched a case from a different serverless instance than the one that created it. `src/lib/store.ts` selects Firestore automatically once the three `FIREBASE_*` variables are present as encrypted Vercel project environment variables, which is how the live deployment runs; local development uses the file fallback by default. The Firebase Auth, session, demo-login and cron variables listed above are set the same way, as encrypted Vercel project environment variables.
 
 ---
 
@@ -293,7 +293,7 @@ Both halves were verified against a real failure, not assumed. The first version
 | A more natural phrasing of a mechanical rewrite | Sets the boundary the rewrite must stay inside | Optional, shown beside the mechanical version, applied only if the citizen accepts it |
 | Plain-language translation for the citizen | Supplies the questions verbatim; the model may not add, drop or reinterpret any of them | Optional, always shown beside the formal English filing |
 
-The rule, stated plainly: a model may propose and phrase. It may never adjudicate or compute. The full reasoning, including how each of the problem statement's four illustrative directions was scoped, and the one left deliberately unbuilt, is on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page.
+The rule, stated plainly: a model may propose and phrase. It may never adjudicate or compute. The full reasoning, including how each of the problem statement's four illustrative directions was scoped, and the one left deliberately unbuilt, is on the [Methodology](https://adhikaar-app.vercel.app/methodology) page.
 
 ---
 

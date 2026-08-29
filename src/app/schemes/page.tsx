@@ -1,4 +1,5 @@
 import { EligibilityWizard } from "@/components/schemes/EligibilityWizard";
+import { getLang } from "@/lib/i18n";
 
 export const metadata = {
   title: "Scheme Eligibility Reader | Adhikaar",
@@ -6,7 +7,9 @@ export const metadata = {
     "Answer a few questions and see exactly which of eight government schemes you qualify for, and which specific rule you fail where you don't, rather than a bare yes or no.",
 };
 
-export default function SchemesPage() {
+export default async function SchemesPage() {
+  const lang = await getLang();
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] mb-2" style={{ color: "var(--gilt)" }}>
@@ -21,7 +24,7 @@ export default function SchemesPage() {
         criterion, not a bare yes or no, and if you don&rsquo;t qualify you can ask the
         department why, in writing, in one click.
       </p>
-      <EligibilityWizard />
+      <EligibilityWizard lang={lang} />
     </div>
   );
 }

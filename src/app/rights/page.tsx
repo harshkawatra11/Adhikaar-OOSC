@@ -1,4 +1,5 @@
 import { RightsAsk } from "@/components/rights/RightsAsk";
+import { getLang } from "@/lib/i18n";
 
 export const metadata = {
   title: "Rights Navigator | Adhikaar",
@@ -6,7 +7,9 @@ export const metadata = {
     "Ask a question about your rights as a tenant, consumer, or worker, and get an answer grounded in the actual statutory text, cited section by section, or an honest 'we don't have a source for this' when the corpus doesn't cover it.",
 };
 
-export default function RightsPage() {
+export default async function RightsPage() {
+  const lang = await getLang();
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] mb-2" style={{ color: "var(--gilt)" }}>
@@ -20,7 +23,7 @@ export default function RightsPage() {
         does not cover something with enough confidence, we say so rather than guess, the same
         way the RTI jurisdiction engine already refuses to name an authority it does not cover.
       </p>
-      <RightsAsk />
+      <RightsAsk lang={lang} />
     </div>
   );
 }

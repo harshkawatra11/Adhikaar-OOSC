@@ -14,6 +14,7 @@ import { lintQuestion } from "@/lib/linter/rules";
 import { lookupStateFee, CENTRAL_FEE, BPL_EXEMPTION_NOTE } from "@/lib/data/state-fees";
 import { createFilingAction } from "@/lib/actions";
 import type { JurisdictionTriageResult, RemedyTriageResult, LintFinding } from "@/lib/types";
+import type { Lang } from "@/lib/i18n/dictionary";
 
 const STATES = [
   "Delhi",
@@ -60,7 +61,11 @@ const SecondaryButton = ({ children, ...props }: React.ButtonHTMLAttributes<HTML
   </button>
 );
 
-export function Interview({ initialProblem }: { initialProblem?: string }) {
+// TODO: full Hindi translation of this component's own strings is
+// still pending; `lang` threaded through now so page-level wiring is
+// correct. Interim state under time pressure.
+export function Interview({ initialProblem, lang = "en" }: { initialProblem?: string; lang?: Lang }) {
+  void lang;
   const router = useRouter();
 
   const [history, setHistory] = useState<StepId[]>(["problem"]);

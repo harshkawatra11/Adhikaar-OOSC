@@ -7,17 +7,18 @@ export function SiteFooter() {
             Adhikaar
           </p>
           <p>
-            An assistive drafting workbench for people who file Right to Information applications on behalf of
-            others. It is not a source of legal advice, and every filing requires human review before it is sent.
+            A citizen&rsquo;s guided path from am I even eligible to here is the document, grounded in the
+            actual statutory text at every step. It is not a source of legal advice, and every filing requires
+            your own review before it is sent.
           </p>
         </div>
         <div>
           <p className="font-medium mb-1" style={{ color: "var(--ink)" }}>
-            Built for OOSC 4.0
+            Civic and legal empowerment
           </p>
           <p>
-            Prepared for the OOSC 4.0 Hackathon, Problem Statement 3, AI for Civic and Legal Empowerment. Released
-            under the Apache License, Version 2.0.
+            Built for citizens navigating government processes on their own. Released under the Apache
+            License, Version 2.0.
           </p>
         </div>
         <div>
