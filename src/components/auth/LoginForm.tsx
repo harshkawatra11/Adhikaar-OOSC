@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -17,7 +17,6 @@ const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 type Mode = "signin" | "signup";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/my";
 
@@ -38,8 +37,16 @@ export function LoginForm() {
     if (!body.ok) {
       throw new Error(body.error || "Could not start a session.");
     }
-    router.push(next);
-    router.refresh();
+    // A full navigation, not router.push(). The App Router's client-side
+    // Router Cache can hold a "no session, redirect to /login" decision
+    // from before this cookie existed (for example a prefetch that ran
+    // while signed out) and replay it instead of re-running middleware
+    // against the cookie jar as it now stands. window.location forces a
+    // real request, which always sees the cookie just set above. This
+    // was caught by an end-to-end Playwright run, not by inspection: the
+    // sign-in call itself returned 200 and the cookie was genuinely in
+    // the browser's jar, and it still bounced back to /login.
+    window.location.assign(next);
   }
 
   async function handleDemo() {

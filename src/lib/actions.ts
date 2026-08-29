@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createCase, getCase, updateCase } from "@/lib/store";
 import { requireSession } from "@/lib/auth/session";
 import { runJurisdictionTriage } from "@/lib/jurisdiction";
@@ -14,40 +13,77 @@ import { polishRewrite } from "@/lib/gemini/rewritePolish";
 import type { CaseRecord, DraftQuestion } from "@/lib/types";
 import { randomUUID } from "crypto";
 
-export async function intakeAction(formData: FormData): Promise<void> {
+export interface CreateFilingInput {
+  grievanceRaw: string;
+  name: string;
+  address: string;
+  state: string;
+  isBpl: boolean;
+  preferredLanguage: string;
+  /** Already chosen by the citizen inside the interview (WP4), from
+   *  the candidates the jurisdiction engine offered. */
+  authorityId?: string;
+  /** Question text the citizen drafted and reviewed inside the
+   *  interview, already lint-checked client-side; re-linted here too,
+   *  since the server is the one place a finding is allowed to be
+   *  authoritative. */
+  questions?: string[];
+}
+
+/** Creates a filing in one write, with jurisdiction, remedy, the
+ *  chosen authority and the drafted questions already resolved, rather
+ *  than the citizen landing on an empty case and filling each of those
+ *  in separately. Used by the guided interview (src/components/
+ *  interview/Interview.tsx) instead of a raw FormData submit, so it
+ *  takes a plain object and returns the new id rather than redirecting
+ *  itself: the interview owns the moment it navigates away. */
+export async function createFilingAction(input: CreateFilingInput): Promise<{ id: string }> {
   const { uid } = await requireSession();
 
-  const grievanceRaw = String(formData.get("grievance") ?? "").trim();
-  const name = String(formData.get("name") ?? "").trim();
-  const address = String(formData.get("address") ?? "").trim();
-  const state = String(formData.get("state") ?? "").trim();
-  const isBpl = formData.get("isBpl") === "on";
-  const preferredLanguage = String(formData.get("preferredLanguage") ?? "English").trim();
+  const grievanceRaw = input.grievanceRaw.trim();
+  const name = input.name.trim();
+  const address = input.address.trim();
+  const state = input.state.trim();
+
+  const jurisdiction = runJurisdictionTriage({
+    grievanceText: grievanceRaw,
+    state,
+    selectedAuthorityId: input.authorityId,
+  });
+  const remedy = runRemedyTriage(grievanceRaw);
 
   const lowConfidenceFields: string[] = [];
   if (!name) lowConfidenceFields.push("applicant.name");
   if (!address) lowConfidenceFields.push("applicant.address");
-  if (!state) lowConfidenceFields.push("geography.state");
+  // Only flag a missing state for a subject where one is actually
+  // needed. A Union subject is answered by a Central office regardless
+  // of which state the applicant lives in, so the interview never asks
+  // for one on that path, and flagging it there would tell a citizen
+  // something is missing when nothing is.
+  if (!state && jurisdiction.scheduleList !== "Union") lowConfidenceFields.push("geography.state");
 
-  const jurisdiction = runJurisdictionTriage({ grievanceText: grievanceRaw, state });
-  const remedy = runRemedyTriage(grievanceRaw);
+  const questions: DraftQuestion[] = (input.questions ?? [])
+    .map((text) => text.trim())
+    .filter(Boolean)
+    .map((text) => ({ id: randomUUID(), text, findings: lintQuestion(text) }));
 
   const record = await createCase({
     ownerUid: uid,
-    status: "triaged",
-    applicant: { name, address, isBpl, preferredLanguage },
+    status: questions.length ? "drafted" : "triaged",
+    applicant: { name, address, isBpl: input.isBpl, preferredLanguage: input.preferredLanguage },
     grievanceSummary: grievanceRaw.slice(0, 220),
     grievanceRaw,
     lowConfidenceFields,
     jurisdiction,
     remedy,
-    questions: [],
+    selectedAuthorityId: input.authorityId,
+    questions,
     deadlines: [],
     operatorNotes: "",
   });
 
   revalidatePath("/my");
-  redirect(`/my/${record.id}`);
+  return { id: record.id };
 }
 
 export async function selectAuthorityAction(caseId: string, authorityId: string): Promise<void> {

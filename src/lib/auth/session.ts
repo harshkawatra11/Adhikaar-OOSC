@@ -108,10 +108,21 @@ export async function requireSession(currentPath?: string): Promise<Session> {
   return session;
 }
 
-export function sessionCookieOptions() {
+/** `secure` must reflect the request that is actually being served,
+ *  not NODE_ENV. Vercel always serves both production and preview over
+ *  https, so NODE_ENV === "production" happens to be right there, but
+ *  `npm run start` also sets NODE_ENV to "production" while serving
+ *  plain http locally, and a browser silently drops a Secure cookie on
+ *  an insecure origin rather than erroring: sign-in would appear to
+ *  succeed (the API calls all return 200) while every subsequent page
+ *  quietly redirects back to /login, which is exactly the failure this
+ *  shape produces and exactly why it is worth getting right rather
+ *  than assuming NODE_ENV was close enough. Callers pass whether the
+ *  actual incoming request was https. */
+export function sessionCookieOptions(isHttps: boolean) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax" as const,
     path: "/",
     maxAge: MAX_AGE_SECONDS,

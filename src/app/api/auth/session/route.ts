@@ -7,6 +7,17 @@ import { NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/auth/adminAuth";
 import { encodeSession, newSessionExpiry, sessionCookieOptions, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
+/** Vercel terminates TLS and forwards x-forwarded-proto, so this is
+ *  correct behind that proxy; a direct http:// dev/start server has no
+ *  such header and correctly falls back to the request URL's own
+ *  protocol. See the comment on sessionCookieOptions() for why this
+ *  cannot just be NODE_ENV === "production". */
+function isHttpsRequest(req: Request): boolean {
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  if (forwardedProto) return forwardedProto === "https";
+  return new URL(req.url).protocol === "https:";
+}
+
 export async function POST(req: Request) {
   let idToken: string;
   try {
@@ -30,7 +41,7 @@ export async function POST(req: Request) {
     });
 
     const res = NextResponse.json({ ok: true });
-    res.cookies.set(SESSION_COOKIE_NAME, cookieValue, sessionCookieOptions());
+    res.cookies.set(SESSION_COOKIE_NAME, cookieValue, sessionCookieOptions(isHttpsRequest(req)));
     return res;
   } catch (e) {
     return NextResponse.json(
@@ -40,8 +51,8 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE_NAME, "", { ...sessionCookieOptions(), maxAge: 0 });
+  res.cookies.set(SESSION_COOKIE_NAME, "", { ...sessionCookieOptions(isHttpsRequest(req)), maxAge: 0 });
   return res;
 }

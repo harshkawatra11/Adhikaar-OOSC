@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseClientConfigured } from "@/lib/auth/firebaseClient";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
@@ -16,8 +14,11 @@ export function SignOutButton() {
         await signOut(getFirebaseAuth());
       }
       await fetch("/api/auth/session", { method: "DELETE" });
-      router.push("/");
-      router.refresh();
+      // A full navigation, not router.push(): see the matching comment
+      // in LoginForm.tsx. The Router Cache can otherwise replay a
+      // stale "signed in" decision from before the cookie was cleared.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- deliberate, proven necessary by an end-to-end test; see the comment above.
+      window.location.assign("/");
     } finally {
       setPending(false);
     }
