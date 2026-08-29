@@ -8,9 +8,10 @@ import { runRemedyTriage } from "@/lib/remedy";
 import { lintQuestion } from "@/lib/linter/rules";
 import { computeInitialDeadlines } from "@/lib/deadlines";
 import { sweepCase } from "@/lib/sweep";
+import { buildSweepPatch } from "@/lib/sweepPatch";
 import { generatePlainLanguageCopy } from "@/lib/gemini/translate";
 import { polishRewrite } from "@/lib/gemini/rewritePolish";
-import type { CaseRecord, DraftQuestion } from "@/lib/types";
+import type { DraftQuestion } from "@/lib/types";
 import { randomUUID } from "crypto";
 
 export interface CreateFilingInput {
@@ -223,19 +224,7 @@ export async function runSweepAction(caseId: string, simulateDate?: string): Pro
   const result = sweepCase(current, now);
   if (!result.changed) return;
 
-  const remainingDeadlines = current.deadlines.filter(
-    (d) => !result.updatedDeadlines.some((u) => u.id === d.id)
-  );
-
-  const patch: Partial<CaseRecord> = {
-    deadlines: [...remainingDeadlines, ...result.updatedDeadlines, ...result.newDeadlines],
-  };
-  if (result.nextStatus) patch.status = result.nextStatus;
-  if (result.firstAppealDraft) {
-    patch.operatorNotes = `${current.operatorNotes}\n\n--- Auto-drafted first appeal (${new Date().toISOString().slice(0, 10)}) ---\n${result.firstAppealDraft}`.trim();
-  }
-
-  await updateCase(caseId, uid, patch);
+  await updateCase(caseId, uid, buildSweepPatch(current, result));
   revalidatePath(`/my/${caseId}`);
 }
 
