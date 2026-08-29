@@ -60,13 +60,13 @@ const SecondaryButton = ({ children, ...props }: React.ButtonHTMLAttributes<HTML
   </button>
 );
 
-export function Interview() {
+export function Interview({ initialProblem }: { initialProblem?: string }) {
   const router = useRouter();
 
   const [history, setHistory] = useState<StepId[]>(["problem"]);
   const step = history[history.length - 1];
 
-  const [problem, setProblem] = useState("");
+  const [problem, setProblem] = useState(initialProblem ?? "");
   const [jurisdiction, setJurisdiction] = useState<JurisdictionTriageResult | null>(null);
   const [remedy, setRemedy] = useState<RemedyTriageResult | null>(null);
   const [selectedState, setSelectedState] = useState("");

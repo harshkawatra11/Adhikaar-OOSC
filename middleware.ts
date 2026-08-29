@@ -11,9 +11,15 @@ import { NextResponse, type NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const hasCookie = Boolean(req.cookies.get("adhikaar_session"));
   if (!hasCookie) {
+    // pathname + search, not just pathname: a signed-out visitor who
+    // reached here via /start?problem=... (the Rights Navigator's
+    // "Get the record you will need" handoff) must land back on that
+    // exact pre-seeded URL after signing in, not a blank /start.
+    const returnTo = req.nextUrl.pathname + req.nextUrl.search;
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", req.nextUrl.pathname);
+    url.search = "";
+    url.searchParams.set("next", returnTo);
     return NextResponse.redirect(url);
   }
   return NextResponse.next();

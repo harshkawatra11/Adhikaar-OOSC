@@ -3,7 +3,7 @@
 // does not render. This module is the single choke point that enforces
 // it, so a UI component cannot quietly skip the check.
 
-import { getCorpusChunk } from "@/lib/data/rti-act";
+import { getCorpusChunk } from "@/lib/data/corpus";
 import type { CorpusChunk } from "@/lib/types";
 
 export class UnresolvedCitationError extends Error {
