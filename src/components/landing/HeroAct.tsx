@@ -17,7 +17,7 @@ export function HeroAct() {
         <div>
           <Reveal>
             <p className="font-mono text-xs uppercase tracking-[0.2em] mb-4" style={{ color: "var(--gilt)" }}>
-              A jurisdiction-aware RTI workbench
+              One citizen, four disconnected tools
             </p>
           </Reveal>
           <Reveal delay={0.05}>
@@ -25,17 +25,20 @@ export function HeroAct() {
               className="font-display font-bold text-5xl leading-[1.05] mb-6"
               style={{ color: "var(--ink)", fontVariationSettings: '"WONK" 1, "SOFT" 0' }}
             >
-              Most rejected applications were never wrong. They were addressed to the wrong
-              government.
+              You do not have a records problem. You have a government problem, and it was
+              never one question.
             </h1>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="text-lg leading-relaxed mb-8" style={{ color: "var(--ink-soft)" }}>
-              Adhikaar is built for the people who file Right to Information applications for
-              others: Common Service Centre operators, legal aid volunteers, RTI activists.
-              Before it drafts anything, it decides whether the authority you have chosen can
-              actually answer the question. Then it runs the statutory clock, and drafts the
-              appeal the day the authority misses it.
+              A citizen with a real grievance is usually asking four questions at once: am I
+              even eligible for something here, what are my rights in this situation, which
+              government is actually responsible, and can I produce a document that survives
+              contact with a bureaucracy. Today those four questions live in four separate
+              places that do not talk to each other. Adhikaar signs a citizen in once and
+              answers all four in one continuous flow, checking eligibility, explaining rights,
+              deciding jurisdiction and legality, then drafting the application and watching
+              the statutory clock until it answers or misses.
             </p>
           </Reveal>
           <Reveal delay={0.15}>
@@ -45,7 +48,7 @@ export function HeroAct() {
                 className="border-2 px-6 py-3 font-body font-semibold panel-lift transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
                 style={{ background: "var(--seal)", borderColor: "var(--ink)", color: "var(--paper)" }}
               >
-                Open a new case
+                Start with what went wrong
               </Link>
               <Link
                 href="/methodology"

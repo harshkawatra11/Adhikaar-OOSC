@@ -2,10 +2,10 @@
 
 # Adhikaar
 
-*A jurisdiction-aware RTI casework workbench, built for the people who file on behalf of others.*
+*One citizen, one continuous journey: am I eligible, what are my rights, is this the right government, can I produce the document.*
 
 [![Live App](https://img.shields.io/badge/Live_App-adhikaaroosc.vercel.app-7c2415?style=for-the-badge&logo=vercel&logoColor=white)](https://adhikaaroosc.vercel.app)
-[![Tests](https://img.shields.io/badge/tests-109_passing-3d5940?style=for-the-badge&logo=vitest&logoColor=white)](#-testing-and-evaluation)
+[![Tests](https://img.shields.io/badge/tests-164_passing-3d5940?style=for-the-badge&logo=vitest&logoColor=white)](#-testing-and-evaluation)
 [![License](https://img.shields.io/badge/license-Apache_2.0-93691f?style=for-the-badge)](LICENSE)
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
@@ -14,11 +14,12 @@
 [![Gemini](https://img.shields.io/badge/Gemini-8e44ad?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
 
 [The claim](#-the-claim-this-is-built-on) &middot;
+[One journey](#-one-journey-not-four-separate-tools) &middot;
 [The stack](#-a-map-of-the-stack) &middot;
 [Architecture](#-architecture) &middot;
 [The statutory clock](#-the-statutory-clock-visualised) &middot;
+[Authentication](#-authentication) &middot;
 [Backend](#-backend-deep-dive) &middot;
-[Screenshots](#-screenshots) &middot;
 [Evaluation](#-testing-and-evaluation) &middot;
 [Run it](#-running-it-locally)
 
@@ -35,6 +36,19 @@ That register belongs to a central land department, and land is almost entirely 
 > Everyone else writes the application. Adhikaar decides whether the authority you have chosen can lawfully answer it, before a document is produced, then runs the statutory clock and drafts the appeal the day the authority misses it.
 
 Full sourcing, the national context figures, and the honesty caveat around the register live on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page inside the running app.
+
+The Government of India's own [RTI Online Portal](https://rtionline.gov.in) already exists, and it is real: working payment rails (net banking, UPI, cards), a BPL fee exemption, SMS status alerts, a published help desk. What it leaves a citizen holding is what Adhikaar is built to fix: no real account (its own FAQ says registration is optional, a case is tracked only by a registration number plus a typed email, and it states it retains RTI cases for three years), no help finding the right government (it covers Central authorities only, and says so, but does not ask what happened and work out who is responsible; addressed to the wrong government under a real 2008 Office Memorandum, an application is returned, not forwarded, no refund), one 3,000-character box with no drafting help, and total silence after submission, nothing tracks the statutory thirty-day clock or the deemed-refusal appeal window.
+
+---
+
+## &#128218; One journey, not four separate tools
+
+A citizen with a real grievance is usually asking four questions at once, and today those four questions live in four places that do not talk to each other. Adhikaar signs a citizen in once and answers all four in one flow, each feature handing off into the next:
+
+1. **Scheme Eligibility Reader** (`/schemes`), *"Am I even eligible for something here?"* Answers eligibility questions in plain language and hands off into the guided interview the moment a records request is what comes next.
+2. **Rights Navigator** (`/rights`), *"What are my rights in this situation?"* Grounded statute Q&A, cited back to the actual section, with a working handoff into the guided interview.
+3. **Jurisdiction and legality, inside the guided interview** (`/start`), *"Is this the correct authority, and is my question legally sound?"* Classifies the subject matter against the Constitution's Seventh Schedule before an authority is ever suggested, and checks every drafted question against the eighteen-rule legality linter.
+4. **Drafting and the statutory clock** (`/my`), *"Can I produce the document, and will I know if they go silent?"* Generates the properly formatted application, then runs the statutory clock on its own and drafts the First Appeal automatically on a deemed refusal.
 
 ---
 
@@ -71,7 +85,7 @@ mindmap
       Plain-language translation
       Rewrite polishing
     Tooling
-      Vitest, 109 tests
+      Vitest, 164 tests
       ESLint
       tsx eval harness
       Playwright live verification
@@ -93,7 +107,7 @@ Every card below is tied to a real file in this repository, not a generic "why w
 | **Local JSON file store** | The zero-setup fallback used when Firestore is not configured, so the product runs with no cloud account at all | `src/lib/store/fileStore.ts` |
 | **`@google/genai` (Gemini)** | Strictly for the two things a model is allowed to do here: propose a rewrite, phrase a translation. It never decides jurisdiction, lints a question, or computes a deadline | `src/lib/gemini/client.ts` |
 | **`pdf-lib`** | Builds the actual filed document server-side: applicant block, correctly addressed CPIO block, numbered questions, fee declaration, no template engine in between | `src/lib/pdf/generate.ts` |
-| **Vitest** | 109 tests: every linter rule fixtured pass and fail, deadline arithmetic, the citation render gate, the full sweep-to-appeal pipeline, the Gemini fallback chain mocked at the SDK boundary | `src/**/*.test.ts` |
+| **Vitest** | 164 tests: every linter rule fixtured pass and fail, deadline arithmetic, the citation render gate, the full sweep-to-appeal pipeline, the Gemini fallback chain mocked at the SDK boundary | `src/**/*.test.ts` |
 | **Vercel** | Hosts the live deployment; Firestore and Gemini credentials are set as encrypted project environment variables, never committed | `vercel.json` implicit, `README.md` deployment section below |
 
 ---
@@ -104,7 +118,7 @@ The real request flow, not an idealised one. The Gemini layer is drawn as a clea
 
 ```mermaid
 graph TD
-    A[Operator: grievance intake] -->|Server Action| B[intakeAction]
+    A[Citizen: grievance intake] -->|Server Action| B[intakeAction]
     B --> C[Remedy triage<br/>deterministic]
     B --> D[Jurisdiction triage<br/>Seventh Schedule, deterministic]
     C --> E[CaseStore router]
@@ -112,7 +126,7 @@ graph TD
     E -->|FIREBASE_* set| F[(Firestore)]
     E -->|not set| G[(Local JSON file)]
 
-    H[Operator: draft a question] -->|live, client-side| I[18-rule legality linter<br/>deterministic]
+    H[Citizen: draft a question] -->|live, client-side| I[18-rule legality linter<br/>deterministic]
     I --> E
 
     E --> J[Statutory deadline engine<br/>deterministic]
@@ -139,7 +153,7 @@ The moneyshot flow, proven end to end against the live deployment, including an 
 
 ```mermaid
 sequenceDiagram
-    participant O as Operator
+    participant O as Citizen
     participant A as Adhikaar
     participant S as Firestore
 
@@ -157,6 +171,16 @@ sequenceDiagram
         A-->>O: Awaiting response
     end
 ```
+
+---
+
+## &#128273; Authentication
+
+A citizen signs in with a real account: Firebase Auth (email/password, or Google), plus a one-click demo login (`demo@adhikaar.in`) surfaced on `/login` and on the landing page footer so a judge can sign in without leaving the browser tab.
+
+The session itself, though, is deliberately **not** a Firebase session cookie. `src/lib/auth/session.ts` explains why in its own header comment: minting a real Firebase session cookie needs `admin.auth().createSessionCookie()`, which requires the `iam.serviceAccounts.signBlob` permission, and this project's service account is intentionally scoped to only `roles/datastore.user`, not widened just to make a login button work. So the client signs in with the Firebase web SDK, gets an ID token, and POSTs it to `/api/auth/session`, which verifies it with `admin.auth().verifyIdToken()` (a JWT check against Google's public signing certificates, which does work under `roles/datastore.user`) and then signs a small payload of its own with an HMAC secret (`SESSION_SECRET`) into the `adhikaar_session` cookie. `middleware.ts` only checks whether that cookie is present, as a redirect convenience on the Edge runtime; the actual verification happens in `getSession()`/`requireSession()` on the Node runtime, which is the real security boundary.
+
+Every case is scoped to its owner at the store layer, not just hidden in the UI: a signed-in citizen can only ever read or write their own cases.
 
 ---
 
@@ -183,7 +207,7 @@ The service account itself holds only `roles/datastore.user` on a dedicated GCP 
 
 ## &#129513; Testing and evaluation
 
-**109 automated tests**, `npm run test`: every one of the eighteen legality-linter rules gets a fixture that must fire it and one that must not, deadline arithmetic is checked to the day across month boundaries, the citation render gate is proven to throw on an unresolved citation rather than render an unsourced claim, the full sweep-to-deemed-refusal-to-appeal pipeline is exercised with real dates, PDF generation is checked for the actual `%PDF-` magic bytes, and the Gemini fallback chain is tested against a mocked SDK boundary for both the happy path and every fallback tier.
+**164 automated tests**, `npm run test`: every one of the eighteen legality-linter rules gets a fixture that must fire it and one that must not, deadline arithmetic is checked to the day across month boundaries, the citation render gate is proven to throw on an unresolved citation rather than render an unsourced claim, the full sweep-to-deemed-refusal-to-appeal pipeline is exercised with real dates, PDF generation is checked for the actual `%PDF-` magic bytes, and the Gemini fallback chain is tested against a mocked SDK boundary for both the happy path and every fallback tier.
 
 **A real evaluation harness**, `npm run eval`, measured against a 220-record gold set sampled deterministically from the same DoLR disclosure register cited above, each one a real citizen's application text paired with its actual government-recorded outcome:
 
@@ -208,7 +232,7 @@ npm run dev
 Open `http://localhost:3000`. No cloud account, no API key, no setup beyond `npm install` is required: the jurisdiction engine, the legality linter, the deadline clock and PDF export are all deterministic code, and case data is stored in a local JSON file created automatically on first run.
 
 ```bash
-npm run test    # 109 tests
+npm run test    # 164 tests
 npm run eval    # jurisdiction classifier measured against the 220-record DoLR gold set
 npm run build   # production build
 ```
@@ -225,11 +249,23 @@ Fill in `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/api
 
 Set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` from a service account scoped to `roles/datastore.user` against your own Firestore database. Without these three set, the app falls back automatically to the local file store described above.
 
+### Sign-in: Firebase Auth and the demo login
+
+`/login` renders and every sign-in attempt fails with a clear message, rather than crashing, until these are set. See [Authentication](#-authentication) above for what the session cookie actually is.
+
+- `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`: public client identifiers from the Firebase Console. Required for sign-in to work at all.
+- `SESSION_SECRET`: a real secret, signs this app's own session cookie. Generate with `openssl rand -hex 32`.
+- `NEXT_PUBLIC_DEMO_EMAIL` / `NEXT_PUBLIC_DEMO_PASSWORD`: the one-click demo login shown on `/login` and on the landing page. The password is deliberately public since it is printed on the page itself.
+- `DEMO_UID`: the demo account's Firebase uid, set once after creating the account.
+- `CRON_SECRET`: bearer token the daily deadline-sweep cron must present; Vercel sends it automatically for its own Cron Jobs once this variable is set in the project.
+
+`.env.example` documents all of these with the exact reasoning behind each one; it is the authoritative list.
+
 ---
 
 ## &#127760; Deployed on Vercel
 
-**Live at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app)**, backed by a real Firestore database, verified with an independent `curl` request that fetched a case from a different serverless instance than the one that created it. `src/lib/store.ts` selects Firestore automatically once the three `FIREBASE_*` variables are present as encrypted Vercel project environment variables, which is how the live deployment runs; local development uses the file fallback by default.
+**Live at [adhikaaroosc.vercel.app](https://adhikaaroosc.vercel.app)**, backed by a real Firestore database, verified with an independent `curl` request that fetched a case from a different serverless instance than the one that created it. `src/lib/store.ts` selects Firestore automatically once the three `FIREBASE_*` variables are present as encrypted Vercel project environment variables, which is how the live deployment runs; local development uses the file fallback by default. The Firebase Auth, session, demo-login and cron variables listed above are set the same way, as encrypted Vercel project environment variables.
 
 ---
 
@@ -254,7 +290,7 @@ Both halves were verified against a real failure, not assumed. The first version
 | Application fee for a given state | Decides, a cited lookup table | Never |
 | Whether a legal claim may render on screen | Decides, the citation render gate | Never |
 | Which authority within a jurisdiction to suggest | Retrieval and filtering choose the candidates | May re-rank, and must cite the candidate it picks |
-| A more natural phrasing of a mechanical rewrite | Sets the boundary the rewrite must stay inside | Optional, shown beside the mechanical version, applied only if an operator accepts it |
+| A more natural phrasing of a mechanical rewrite | Sets the boundary the rewrite must stay inside | Optional, shown beside the mechanical version, applied only if the citizen accepts it |
 | Plain-language translation for the citizen | Supplies the questions verbatim; the model may not add, drop or reinterpret any of them | Optional, always shown beside the formal English filing |
 
 The rule, stated plainly: a model may propose and phrase. It may never adjudicate or compute. The full reasoning, including how each of the problem statement's four illustrative directions was scoped, and the one left deliberately unbuilt, is on the [Methodology](https://adhikaaroosc.vercel.app/methodology) page.

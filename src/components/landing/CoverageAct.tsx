@@ -11,12 +11,14 @@ export function CoverageAct() {
             Who this is for
           </h2>
           <p className="leading-relaxed mb-3" style={{ color: "var(--ink-soft)" }}>
-            Adhikaar is built for the person who files these applications for other people, not
-            for a single citizen filing once. India&rsquo;s Common Service Centre network alone
-            runs to roughly {CSC_CONTEXT.functionalCentres} functional centres and{" "}
+            Adhikaar is built for the citizen with the actual grievance, signed in under their
+            own account, from the first question to the drafted document. It also works well
+            through a second channel: Common Service Centre operators and legal aid volunteers
+            who file on someone else&rsquo;s behalf. India&rsquo;s Common Service Centre network
+            alone runs to roughly {CSC_CONTEXT.functionalCentres} functional centres and{" "}
             {CSC_CONTEXT.vles} village level entrepreneurs, reaching{" "}
-            {CSC_CONTEXT.gramPanchayatCoverage}. A tool that helps one of these operators serves
-            dozens of citizens who would otherwise never use a web form themselves.
+            {CSC_CONTEXT.gramPanchayatCoverage}, so a tool that also serves that operator
+            reaches citizens who would otherwise never open a web form themselves.
           </p>
           <p className="text-sm" style={{ color: "var(--ink-faint)" }}>
             Source: Common Services Centres Scheme, Ministry of Electronics and Information

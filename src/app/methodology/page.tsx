@@ -15,7 +15,7 @@ const SCOPING_TABLE = [
     direction: "Conversational Form-Filler",
     quote: "interviews the user and auto-populates the official form",
     status: "Covered, scoped to RTI",
-    note: "Intake interviews the operator and populates the RTI application. It was not generalised into a form-filler for arbitrary government forms, which would have diluted the depth of the RTI vertical without adding a defensible second one in the time available.",
+    note: "Intake interviews the citizen and populates the RTI application. It was not generalised into a form-filler for arbitrary government forms, which would have diluted the depth of the RTI vertical without adding a defensible second one in the time available.",
   },
   {
     direction: "Rights Navigator",
@@ -85,7 +85,7 @@ export default function MethodologyPage() {
                 ["Whether a legal claim may render on screen", "Decides, the citation render gate", "Never"],
                 ["Which authority within a jurisdiction to suggest", "Retrieval and filtering choose the candidates", "May re-rank, and must cite the candidate it picks"],
                 ["Whether a question needs rewriting at all, and the safe mechanical rewrite itself", "Decides, the eighteen-rule linter, before any model is called", "Not consulted"],
-                ["A more natural-sounding phrasing of that same rewrite", "Sets the boundary the rewrite must stay inside", "Optional, via Gemini; shown beside the mechanical version, never in place of it, and only applied if an operator clicks accept"],
+                ["A more natural-sounding phrasing of that same rewrite", "Sets the boundary the rewrite must stay inside", "Optional, via Gemini; shown beside the mechanical version, never in place of it, and only applied if the citizen clicks accept"],
                 ["Plain-language translation for the citizen", "Supplies the questions and grievance verbatim; the model may not add, drop, or reinterpret any of them", "Optional, via Gemini; always shown beside the formal English filing with a machine-translation notice"],
               ].map((row) => (
                 <tr key={row[0]}>
@@ -147,11 +147,12 @@ export default function MethodologyPage() {
         </div>
         <p className="mt-8 text-sm leading-relaxed border p-4" style={{ borderColor: "var(--rule-strong)", background: "var(--paper-raised)", color: "var(--ink-soft)" }}>
           One further interpretation is worth stating rather than leaving implicit. The challenge statement speaks
-          of helping a citizen; this system is built for the intermediary who files on a citizen&rsquo;s behalf. The
-          citizen most excluded by bureaucratic language is also the least likely to operate a web form directly,
-          which is why the intended user here is the Common Service Centre operator, the legal aid volunteer or the
-          RTI activist, not the citizen typing at a keyboard. The citizen remains the beneficiary and receives a
-          plain-language copy of what was filed on their behalf.
+          of helping a citizen, and this system is built for exactly that citizen, signed in under their own
+          account, from the first question through to the drafted document. It also works well through a second
+          channel: the Common Service Centre operator, the legal aid volunteer or the RTI activist who files on a
+          citizen&rsquo;s behalf. That second channel matters because the citizen most excluded by bureaucratic
+          language is also the least likely to reach a web form on their own, but it is a second channel, not the
+          primary one; the citizen typing at a keyboard is the person this system is built for first.
         </p>
       </section>
 
